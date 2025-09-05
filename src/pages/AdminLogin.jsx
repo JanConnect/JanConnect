@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { adminLogin } from "../api/admin";  // Add this import
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -9,13 +10,29 @@ export default function AdminLogin() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Check if admin is already logged in
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // Verify if user is admin by checking token
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role === 'admin') {
+          navigate("/admin/dashboard");
+          return;
+        }
+      } catch (error) {
+        // Invalid token, continue with login
+        localStorage.removeItem('accessToken');
+      }
+    }
+
     // Trigger the animation after a tiny delay
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 50);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigate]);
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -23,17 +40,43 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
+    
     try {
-      // TODO: call POST /admin/login
-      console.log("admin login payload:", form);
+      const response = await adminLogin(form);
+      const { user, admin, accessToken } = response.data.data;
+      
+      // Store token in localStorage (optional, since you're using cookies)
+      localStorage.setItem('accessToken', accessToken);
+      
+      // Store admin info for frontend use
+      localStorage.setItem('adminInfo', JSON.stringify({
+        user,
+        admin,
+        loginTime: new Date().toISOString()
+      }));
+
+      console.log("Admin login successful:", { user, admin });
       navigate("/admin/dashboard");
-    } catch {
-      setError("Admin login failed. Try again.");
+      
+    } catch (error) {
+      console.error("Admin login failed:", error);
+      
+      // Handle specific error messages
+      if (error.response?.status === 404) {
+        setError("Admin account not found. Please contact your system administrator.");
+      } else if (error.response?.status === 401) {
+        setError("Invalid admin credentials. Please check your email and password.");
+      } else if (error.response?.status === 403) {
+        setError("Admin account is deactivated. Please contact your system administrator.");
+      } else {
+        setError("Admin login failed. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Rest of your component remains exactly the same
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background image with glassmorphism overlay */}
@@ -54,21 +97,21 @@ export default function AdminLogin() {
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           <div className="mb-10">
-            <h1 className="text-4xl lg:text-5xl font-light mb-3 transition-all duration-1000 delay-100 ease-out ${
+            <h1 className={`text-4xl lg:text-5xl font-light mb-3 transition-all duration-1000 delay-100 ease-out ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }">Admin Access</h1>
-            <h2 className="text-5xl lg:text-6xl font-bold text-white bg-clip-text transition-all duration-1000 delay-200 ease-out ${
+            }`}>Admin Access</h1>
+            <h2 className={`text-5xl lg:text-6xl font-bold text-white bg-clip-text transition-all duration-1000 delay-200 ease-out ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }">
+            }`}>
               JanConnect
             </h2>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
             {/* Form fields with staggered animations */}
-            <div className="transition-all duration-700 delay-300 ease-out ${
+            <div className={`transition-all duration-700 delay-300 ease-out ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }">
+            }`}>
               <label className="block text-sm font-medium mb-2 opacity-90">Admin Email</label>
               <input
                 type="email"
@@ -80,9 +123,9 @@ export default function AdminLogin() {
               />
             </div>
 
-            <div className="transition-all duration-700 delay-400 ease-out ${
+            <div className={`transition-all duration-700 delay-400 ease-out ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }">
+            }`}>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium opacity-90">Password</label>
                 <Link
@@ -103,20 +146,21 @@ export default function AdminLogin() {
             </div>
 
             {error && (
-              <div className="bg-red-400/20 text-red-100 p-3 rounded-lg text-sm border border-red-400/30 backdrop-blur-md transition-all duration-700 delay-500 ease-out ${
+              <div className={`bg-red-400/20 text-red-100 p-3 rounded-lg text-sm border border-red-400/30 backdrop-blur-md transition-all duration-700 delay-500 ease-out ${
                 isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }">
+              }`}>
                 {error}
               </div>
             )}
 
-            <div className="transition-all duration-700 delay-500 ease-out ${
+            <div className={`transition-all duration-700 delay-500 ease-out ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }">
+            }`}>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-4 bg-white/90 text-gray-800 rounded-xl font-medium hover:bg-white transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-opacity-50 disabled:opacity-70" >
+                className="w-full py-4 bg-white/90 text-gray-800 rounded-xl font-medium hover:bg-white transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-opacity-50 disabled:opacity-70"
+              >
                 {submitting ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -132,9 +176,9 @@ export default function AdminLogin() {
             </div>
           </form>
 
-          <div className="mt-8 text-center transition-all duration-700 delay-600 ease-out ${
+          <div className={`mt-8 text-center transition-all duration-700 delay-600 ease-out ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }">
+          }`}>
             <p className="text-white/80 text-sm">
               Not an admin?{" "}
               <Link

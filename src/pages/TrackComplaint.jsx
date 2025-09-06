@@ -7,10 +7,12 @@ import {
   ChevronDown, ChevronUp
 } from "lucide-react";
 import { getUserReports } from '../api/report';
+import { useTranslation } from "react-i18next"; // Add this import
 
 export default function TrackComplaint() {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const { t } = useTranslation(); // Add this hook
   const [searchQuery, setSearchQuery] = useState("");
   const [complaints, setComplaints] = useState([]);
   const [filteredComplaints, setFilteredComplaints] = useState([]);
@@ -34,12 +36,12 @@ export default function TrackComplaint() {
         console.error('Error fetching complaints:', err);
         
         if (err.response?.status === 401) {
-          setError("Please login again to view your complaints");
+          setError(t("loginAgainToView"));
           navigate('/login');
         } else if (err.response?.status === 404) {
-          setError("No complaints found");
+          setError(t("noComplaintsFound"));
         } else {
-          setError(err.response?.data?.message || "Failed to load complaints");
+          setError(err.response?.data?.message || t("failedToLoadComplaints"));
         }
       } finally {
         setLoading(false);
@@ -47,7 +49,7 @@ export default function TrackComplaint() {
     };
 
     fetchUserComplaints();
-  }, [userId, navigate]);
+  }, [userId, navigate, t]);
 
   useEffect(() => {
     let filtered = complaints;
@@ -137,7 +139,7 @@ export default function TrackComplaint() {
 
   const getLatestUpdate = (updates) => {
     if (!updates || updates.length === 0) {
-      return { message: "No updates available", date: null };
+      return { message: t("noUpdatesAvailable"), date: null };
     }
     return updates[updates.length - 1];
   };
@@ -177,7 +179,7 @@ export default function TrackComplaint() {
             whileTap={{ scale: 0.95 }}
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            Back
+            {t("back")}
           </motion.button>
           
           <motion.div 
@@ -186,7 +188,7 @@ export default function TrackComplaint() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            Track Your Complaints
+            {t("trackYourComplaints")}
           </motion.div>
           
           <div className="w-10"></div>
@@ -206,8 +208,8 @@ export default function TrackComplaint() {
               <Search className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">Your Complaints</h1>
-              <p className="text-white/60 text-sm mt-1">{complaints.length} total complaints</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">{t("yourComplaints")}</h1>
+              <p className="text-white/60 text-sm mt-1">{complaints.length} {t("totalComplaints")}</p>
             </div>
           </div>
 
@@ -219,10 +221,10 @@ export default function TrackComplaint() {
             transition={{ duration: 0.6 }}
           >
             {[
-              { label: "Total", count: complaints.length, status: "all" },
-              { label: "Pending", count: getStatusCount("pending"), status: "pending" },
-              { label: "In Progress", count: getStatusCount("in-progress"), status: "in-progress" },
-              { label: "Resolved", count: getStatusCount("resolved"), status: "resolved" }
+              { label: t("total"), count: complaints.length, status: "all" },
+              { label: t("pending"), count: getStatusCount("pending"), status: "pending" },
+              { label: t("inProgress"), count: getStatusCount("in-progress"), status: "in-progress" },
+              { label: t("resolved"), count: getStatusCount("resolved"), status: "resolved" }
             ].map((stat, index) => (
               <motion.button
                 key={stat.label}
@@ -249,7 +251,7 @@ export default function TrackComplaint() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search complaints by title, ID, or category..."
+              placeholder={t("searchComplaintsPlaceholder")}
               className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60"
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
@@ -274,7 +276,7 @@ export default function TrackComplaint() {
           {loading && (
             <div className="text-center py-8 text-white/60">
               <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
-              <p>Loading your complaints...</p>
+              <p>{t("loadingYourComplaints")}</p>
             </div>
           )}
 
@@ -309,13 +311,13 @@ export default function TrackComplaint() {
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
                               <h3 className="text-lg font-semibold text-white">{complaint.title}</h3>
-                              <p className="text-white/60 text-sm">ID: {complaint.reportId} • {formatDate(complaint.createdAt || complaint.date)}</p>
+                              <p className="text-white/60 text-sm">{t("id")}: {complaint.reportId} • {formatDate(complaint.createdAt || complaint.date)}</p>
                             </div>
                             
                             <div className="flex items-center gap-2">
                               <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}>
                                 <StatusIcon size={14} />
-                                <span className="capitalize">{complaint.status.replace('-', ' ')}</span>
+                                <span className="capitalize">{t(complaint.status.replace('-', ' '))}</span>
                               </div>
                               {isSelected ? <ChevronUp size={20} className="text-white/60" /> : <ChevronDown size={20} className="text-white/60" />}
                             </div>
@@ -334,7 +336,7 @@ export default function TrackComplaint() {
                             
                             <div className="flex items-center gap-3">
                               <span>👍 {complaint.upvoteCount || 0}</span>
-                              <span>Priority: {complaint.priority || 1}/5</span>
+                              <span>{t("priority")}: {complaint.priority || 1}/5</span>
                             </div>
                           </div>
                         </div>
@@ -354,13 +356,13 @@ export default function TrackComplaint() {
                                   {/* Left Column */}
                                   <div className="space-y-4">
                                     <div>
-                                      <h4 className="text-sm font-medium text-white/80 mb-2">Full Description</h4>
+                                      <h4 className="text-sm font-medium text-white/80 mb-2">{t("fullDescription")}</h4>
                                       <p className="text-white/90 text-sm leading-relaxed">{complaint.description}</p>
                                     </div>
                                     
                                     {complaint.location?.address && (
                                       <div>
-                                        <h4 className="text-sm font-medium text-white/80 mb-2">Location</h4>
+                                        <h4 className="text-sm font-medium text-white/80 mb-2">{t("location")}</h4>
                                         <div className="flex items-center gap-2 text-white/90">
                                           <MapPin size={14} />
                                           <span>{complaint.location.address}</span>
@@ -371,7 +373,7 @@ export default function TrackComplaint() {
                                     {/* Municipality & Department */}
                                     {(complaint.municipality?.name || complaint.department?.name) && (
                                       <div>
-                                        <h4 className="text-sm font-medium text-white/80 mb-2">Assignment</h4>
+                                        <h4 className="text-sm font-medium text-white/80 mb-2">{t("assignment")}</h4>
                                         <div className="space-y-1">
                                           {complaint.municipality?.name && (
                                             <div className="flex items-center gap-2 text-white/90">
@@ -395,7 +397,7 @@ export default function TrackComplaint() {
                                     {/* Timeline */}
                                     {complaint.updates && complaint.updates.length > 0 && (
                                       <div>
-                                        <h4 className="text-sm font-medium text-white/80 mb-3">Progress Timeline</h4>
+                                        <h4 className="text-sm font-medium text-white/80 mb-3">{t("progressTimeline")}</h4>
                                         <div className="space-y-3 max-h-48 overflow-y-auto">
                                           {complaint.updates.map((update, updateIndex) => (
                                             <div key={updateIndex} className="flex gap-3">
@@ -418,7 +420,7 @@ export default function TrackComplaint() {
                                     {/* Rating & Feedback */}
                                     {(complaint.rating || complaint.feedback) && (
                                       <div>
-                                        <h4 className="text-sm font-medium text-white/80 mb-2">Your Feedback</h4>
+                                        <h4 className="text-sm font-medium text-white/80 mb-2">{t("yourFeedback")}</h4>
                                         {complaint.rating && (
                                           <div className="flex items-center gap-2 mb-2">
                                             <div className="flex">
@@ -441,7 +443,7 @@ export default function TrackComplaint() {
                                     onClick={() => openDetailModal(complaint)}
                                     className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors duration-200"
                                   >
-                                    View Full Details
+                                    {t("viewFullDetails")}
                                   </button>
                                 </div>
                               </div>
@@ -460,7 +462,7 @@ export default function TrackComplaint() {
                     <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     {searchQuery || selectedStatus !== "all" ? (
                       <div>
-                        <p className="mb-4">No complaints found matching your filters.</p>
+                        <p className="mb-4">{t("noComplaintsMatchingFilters")}</p>
                         <button 
                           onClick={() => {
                             setSearchQuery("");
@@ -468,19 +470,19 @@ export default function TrackComplaint() {
                           }}
                           className="text-blue-400 hover:text-blue-300 underline"
                         >
-                          Clear filters
+                          {t("clearFilters")}
                         </button>
                       </div>
                     ) : (
                       <div>
-                        <p className="mb-6">You haven't submitted any complaints yet.</p>
+                        <p className="mb-6">{t("noComplaintsSubmittedYet")}</p>
                         <motion.button
                           onClick={() => navigate(`/user/${userId}/raise`)}
                           className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-300"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          Submit Your First Complaint
+                          {t("submitFirstComplaint")}
                         </motion.button>
                       </div>
                     )}
@@ -515,32 +517,32 @@ export default function TrackComplaint() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-center text-white/80">
                   <Calendar className="h-5 w-5 mr-2" />
-                  <span>Reported: {formatDetailDate(selectedComplaint.createdAt || selectedComplaint.date)}</span>
+                  <span>{t("reported")}: {formatDetailDate(selectedComplaint.createdAt || selectedComplaint.date)}</span>
                 </div>
                 {selectedComplaint.status === "resolved" && (
                   <div className="flex items-center text-white/80">
                     <CheckCircle className="h-5 w-5 mr-2 text-green-400" />
-                    <span>Resolved: {formatDetailDate(selectedComplaint.resolvedDate || selectedComplaint.updatedAt)}</span>
+                    <span>{t("resolved")}: {formatDetailDate(selectedComplaint.resolvedDate || selectedComplaint.updatedAt)}</span>
                   </div>
                 )}
                 <div className="flex items-center text-white/80">
                   <MapPin className="h-5 w-5 mr-2" />
-                  <span>{selectedComplaint.location?.address || 'Location not specified'}</span>
+                  <span>{selectedComplaint.location?.address || t('locationNotSpecified')}</span>
                 </div>
                 <div className="flex items-center text-white/80">
-                  <span>Category: {selectedComplaint.category}</span>
+                  <span>{t("category")}: {selectedComplaint.category}</span>
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-2">Description</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{t("description")}</h3>
                 <p className="text-white/80">{selectedComplaint.description}</p>
               </div>
               
               {/* Progress Timeline */}
               {selectedComplaint.updates && selectedComplaint.updates.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Progress Timeline</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">{t("progressTimeline")}</h3>
                   <div className="space-y-4">
                     {selectedComplaint.updates.map((update, index) => (
                       <div key={index} className="flex">
@@ -563,7 +565,7 @@ export default function TrackComplaint() {
               {/* Feedback Section */}
               {(selectedComplaint.rating || selectedComplaint.feedback) && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">Your Feedback</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">{t("yourFeedback")}</h3>
                   <div className="flex items-center mb-2">
                     <div className="flex mr-2">
                       {renderStars(selectedComplaint.rating || 0)}
@@ -582,13 +584,13 @@ export default function TrackComplaint() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     {selectedComplaint.municipality?.name && (
                       <div>
-                        <span className="text-white/60">Municipality: </span>
+                        <span className="text-white/60">{t("municipality")}: </span>
                         <span className="text-white">{selectedComplaint.municipality.name}</span>
                       </div>
                     )}
                     {selectedComplaint.department?.name && (
                       <div>
-                        <span className="text-white/60">Department: </span>
+                        <span className="text-white/60">{t("department")}: </span>
                         <span className="text-white">{selectedComplaint.department.name}</span>
                       </div>
                     )}

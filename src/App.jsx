@@ -10,6 +10,7 @@ import RaiseComplaint from "./pages/RaiseComplaint";
 import TrackComplaint from "./pages/TrackComplaint";
 import ResolvedComplaints from "./pages/ResolvedComplaints";
 import AdminDashboard from './pages/AdminDashboard';
+// import './i18n';
 // import ComplaintDetail from "./pages/ComplaintDetail";
 
 

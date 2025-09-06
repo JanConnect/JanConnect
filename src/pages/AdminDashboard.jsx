@@ -1,37 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search,
-  Filter,
-  ArrowUpDown,
-  Download,
-  RefreshCw,
-  MoreHorizontal,
-  User,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  XCircle,
-  MapPin,
-  MessageSquare,
-  ThumbsUp,
-  ArrowBigUp,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  AlertTriangle,
-  ArrowLeft,
-  Mail,
-  Phone,
-  Send,
-  Edit3,
-  Calendar,
-  Eye,
-  Paperclip
-} from 'lucide-react';
+import {Search,Filter,ArrowUpDown,Download,RefreshCw,MoreHorizontal,User,AlertCircle,CheckCircle,Clock,XCircle,MapPin,MessageSquare,ThumbsUp,ArrowBigUp,FileText,ChevronDown,ChevronUp,AlertTriangle,ArrowLeft,Mail,Phone,Send,Edit3,Calendar,Eye,Paperclip} from 'lucide-react';
 
-// Unified data structure for complaints
-const generateComplaintData = () => {
+  const generateComplaintData = () => {
   const statuses = ['pending', 'in_progress', 'resolved', 'rejected'];
   const categories = ['Infrastructure', 'Sanitation', 'Public Safety', 'Noise Pollution'];
   const areas = ['Downtown', 'Suburbia', 'West End'];
@@ -843,13 +814,14 @@ const AdminDashboard = () => {
                   <div>
                     <label className="block text-sm font-medium text-white/70 mb-2">Status</label>
                     <select
+                        style={{backgroundColor:"transparent"}}
                       className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                       value={selectedComplaint.status}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="rejected">Rejected</option>
+                      <option style={{backgroundColor:"gray"}} value="pending">Pending</option>
+                      <option style={{backgroundColor:"gray"}} value="in_progress">In Progress</option>
+                      <option style={{backgroundColor:"gray"}} value="resolved">Resolved</option>
+                      <option style={{backgroundColor:"gray"}} value="rejected">Rejected</option>
                     </select>
                   </div>
                   

@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle, Star, Calendar, MapPin, Loader, XCircle } from "lucide-react";
-import { getUserReports } from '../api/report'; // Import your API function
+import { getUserReports } from '../api/report';
+import { useTranslation } from "react-i18next"; // Add this import
 
 export default function ResolvedComplaints() {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const { t } = useTranslation(); // Add this hook
   const [resolvedComplaints, setResolvedComplaints] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,12 +36,12 @@ export default function ResolvedComplaints() {
         console.error('Error fetching resolved complaints:', err);
         
         if (err.response?.status === 401) {
-          setError("Please login again to view your complaints");
+          setError(t("loginAgainToView"));
           navigate('/login');
         } else if (err.response?.status === 404) {
-          setError("No resolved complaints found");
+          setError(t("noResolvedComplaints"));
         } else {
-          setError(err.response?.data?.message || "Failed to load resolved complaints");
+          setError(err.response?.data?.message || t("failedToLoadResolved"));
         }
       } finally {
         setLoading(false);
@@ -47,7 +49,7 @@ export default function ResolvedComplaints() {
     };
 
     fetchResolvedComplaints();
-  }, [userId, navigate]);
+  }, [userId, navigate, t]);
 
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -68,7 +70,7 @@ export default function ResolvedComplaints() {
 
   const getLatestUpdate = (updates) => {
     if (!updates || updates.length === 0) {
-      return { message: "No updates available", date: null };
+      return { message: t("noUpdatesAvailable"), date: null };
     }
     return updates[updates.length - 1];
   };
@@ -100,7 +102,7 @@ export default function ResolvedComplaints() {
             whileTap={{ scale: 0.95 }}
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
-            Back
+            {t("back")}
           </motion.button>
           
           <motion.div 
@@ -109,7 +111,7 @@ export default function ResolvedComplaints() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            Resolved Complaints
+            {t("resolvedComplaints")}
           </motion.div>
           
           <div className="w-10"></div> {/* Spacer for balance */}
@@ -129,8 +131,8 @@ export default function ResolvedComplaints() {
               <CheckCircle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">Resolved Issues</h1>
-              <p className="text-white/60 text-sm mt-1">{resolvedComplaints.length} resolved complaints</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">{t("resolvedIssues")}</h1>
+              <p className="text-white/60 text-sm mt-1">{resolvedComplaints.length} {t("resolvedComplaintsCount")}</p>
             </div>
           </div>
 
@@ -138,7 +140,7 @@ export default function ResolvedComplaints() {
           {loading && (
             <div className="text-center py-12 text-white/60">
               <Loader className="h-8 w-8 mx-auto mb-4 animate-spin" />
-              <p>Loading resolved complaints...</p>
+              <p>{t("loadingResolvedComplaints")}</p>
             </div>
           )}
 
@@ -167,18 +169,18 @@ export default function ResolvedComplaints() {
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-lg font-semibold text-white">{complaint.title}</h3>
                         <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
-                          Resolved
+                          {t("resolved")}
                         </div>
                       </div>
                       
                       <div className="flex items-center text-white/60 text-sm mb-2">
                         <Calendar className="h-4 w-4 mr-1" />
-                        <span>Resolved on {formatDate(complaint.resolvedDate || complaint.updatedAt)}</span>
+                        <span>{t("resolvedOn")} {formatDate(complaint.resolvedDate || complaint.updatedAt)}</span>
                       </div>
                       
                       <div className="flex items-center text-white/60 text-sm mb-3">
                         <MapPin className="h-4 w-4 mr-1" />
-                        <span>{complaint.location?.address || 'Location not specified'}</span>
+                        <span>{complaint.location?.address || t('locationNotSpecified')}</span>
                       </div>
                       
                       <p className="text-white/80 text-sm mb-3 line-clamp-2">{complaint.description}</p>
@@ -195,7 +197,7 @@ export default function ResolvedComplaints() {
               ) : (
                 <div className="text-center py-8 text-white/60">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No resolved complaints yet.</p>
+                  <p>{t("noResolvedComplaintsYet")}</p>
                 </div>
               )}
             </>
@@ -225,30 +227,30 @@ export default function ResolvedComplaints() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div className="flex items-center text-white/80">
                     <Calendar className="h-5 w-5 mr-2" />
-                    <span>Reported: {formatDate(selectedComplaint.createdAt || selectedComplaint.date)}</span>
+                    <span>{t("reported")}: {formatDate(selectedComplaint.createdAt || selectedComplaint.date)}</span>
                   </div>
                   <div className="flex items-center text-white/80">
                     <CheckCircle className="h-5 w-5 mr-2 text-green-400" />
-                    <span>Resolved: {formatDate(selectedComplaint.resolvedDate || selectedComplaint.updatedAt)}</span>
+                    <span>{t("resolved")}: {formatDate(selectedComplaint.resolvedDate || selectedComplaint.updatedAt)}</span>
                   </div>
                   <div className="flex items-center text-white/80">
                     <MapPin className="h-5 w-5 mr-2" />
-                    <span>{selectedComplaint.location?.address || 'Location not specified'}</span>
+                    <span>{selectedComplaint.location?.address || t('locationNotSpecified')}</span>
                   </div>
                   <div className="flex items-center text-white/80">
-                    <span>Category: {selectedComplaint.category}</span>
+                    <span>{t("category")}: {selectedComplaint.category}</span>
                   </div>
                 </div>
                 
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">Description</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">{t("description")}</h3>
                   <p className="text-white/80">{selectedComplaint.description}</p>
                 </div>
                 
                 {/* Resolution Timeline */}
                 {selectedComplaint.updates && selectedComplaint.updates.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">Resolution Timeline</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">{t("resolutionTimeline")}</h3>
                     <div className="space-y-3">
                       {selectedComplaint.updates.map((update, index) => (
                         <div key={index} className="flex">
@@ -271,7 +273,7 @@ export default function ResolvedComplaints() {
                 {/* Feedback Section */}
                 {(selectedComplaint.rating || selectedComplaint.feedback) && (
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Your Feedback</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">{t("yourFeedback")}</h3>
                     <div className="flex items-center mb-2">
                       <div className="flex mr-2">
                         {renderStars(selectedComplaint.rating || 0)}
@@ -290,13 +292,13 @@ export default function ResolvedComplaints() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       {selectedComplaint.municipality?.name && (
                         <div>
-                          <span className="text-white/60">Municipality: </span>
+                          <span className="text-white/60">{t("municipality")}: </span>
                           <span className="text-white">{selectedComplaint.municipality.name}</span>
                         </div>
                       )}
                       {selectedComplaint.department?.name && (
                         <div>
-                          <span className="text-white/60">Department: </span>
+                          <span className="text-white/60">{t("department")}: </span>
                           <span className="text-white">{selectedComplaint.department.name}</span>
                         </div>
                       )}

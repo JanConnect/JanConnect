@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { multilingualComplaints } from "../data/multilingualComplaints";
 import { multilingualDepartmentData } from "../data/multilingualComplaints";
 import { multilingualReportsData } from "../data/multilingualComplaints";
+import Chatbot from "./ChatBot";
 
 export default function UserPage() {
   const navigate = useNavigate();
@@ -412,6 +413,7 @@ useEffect(() => {
         ></div>
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       </div>
+      <Chatbot />
       {/* Header */}
       <motion.header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${

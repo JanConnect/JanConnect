@@ -531,7 +531,7 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
                     filters.category === category ? 'bg-white/20 text-blue-200' : ''
                   }`}
                 >
-                  📁 {category}
+                  {category}
                 </button>
               ))}
             </div>
@@ -1248,7 +1248,7 @@ const AdminDashboard = () => {
                   </span>
                   
                   <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    📁 {safeRender(selectedComplaint.category, 'Unknown')}
+                     {safeRender(selectedComplaint.category, 'Unknown')}
                   </span>
                 </div>
               </div>

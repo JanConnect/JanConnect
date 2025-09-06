@@ -8,6 +8,7 @@ import {BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,LineC
 import ScrollHeatmap from "../pages/ScrollHeatmap";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchLocationDetails } from "../store/locationSlice";
+import Chatbot from "./ChatBot";
 
 
 export default function UserPage() {
@@ -364,6 +365,7 @@ export default function UserPage() {
         ></div>
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       </div>
+      <Chatbot />
       {/* Header at the very top - matching the provided design */}
       <motion.header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${

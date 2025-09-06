@@ -29,6 +29,9 @@ const containerStyle = {
   borderRadius: '0.75rem',
 };
 
+// **UPDATED: Radius constant for all verification (changed to 10km)**
+const VERIFICATION_RADIUS_KM = 10;
+
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth's radius in kilometers
@@ -45,7 +48,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 // Check if location is within radius
-const isLocationWithinRadius = (userLat, userLon, problemLat, problemLon, radiusKm = 1) => {
+const isLocationWithinRadius = (userLat, userLon, problemLat, problemLon, radiusKm = VERIFICATION_RADIUS_KM) => {
   const distance = calculateDistance(userLat, userLon, problemLat, problemLon);
   return {
     isWithin: distance <= radiusKm,
@@ -54,10 +57,9 @@ const isLocationWithinRadius = (userLat, userLon, problemLat, problemLon, radius
   };
 };
 
-// **NEW: Smart Image Verification Component (No EXIF Dependency)**
+// **UPDATED: Smart Image Verification Component with 10km radius**
 const SmartImageVerification = ({ file, userLocation, problemLocation, onVerificationComplete }) => {
   const [verificationResult, setVerificationResult] = useState(null);
-  const [userConfirmation, setUserConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const performSmartVerification = async () => {
@@ -72,7 +74,6 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         qualityScore: 0,
         overallScore: 0,
         canSubmit: false,
-        userConfirmed: false,
         warnings: [],
         details: {
           location: null,
@@ -81,14 +82,14 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         }
       };
 
-      // 1. Location Verification (35 points)
+      // **UPDATED: Location Verification (35 points) - Using 10km radius**
       if (userLocation && problemLocation) {
         const locationCheck = isLocationWithinRadius(
           userLocation.lat, 
           userLocation.lng, 
           problemLocation.lat, 
           problemLocation.lng, 
-          1
+          VERIFICATION_RADIUS_KM  // 10km radius
         );
         
         if (locationCheck.isWithin) {
@@ -121,6 +122,8 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
 
       // Calculate overall score
       result.overallScore = result.locationScore + result.timingScore + result.qualityScore;
+      
+      // Only allow submission if score passes threshold (≥60) - NO USER CONSENT
       result.canSubmit = result.overallScore >= 60;
 
       setVerificationResult(result);
@@ -131,7 +134,7 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
       const errorResult = {
         overallScore: 0,
         canSubmit: false,
-        warnings: ['Unable to perform verification - manual confirmation required']
+        warnings: ['Unable to perform verification - photo cannot be submitted']
       };
       setVerificationResult(errorResult);
       onVerificationComplete(errorResult);
@@ -188,19 +191,6 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
 
       img.src = URL.createObjectURL(file);
     });
-  };
-
-  const handleUserConfirmation = (confirmed) => {
-    setUserConfirmation(confirmed);
-    if (verificationResult) {
-      const updatedResult = {
-        ...verificationResult,
-        userConfirmed: confirmed,
-        canSubmit: verificationResult.overallScore >= 60 || confirmed
-      };
-      setVerificationResult(updatedResult);
-      onVerificationComplete(updatedResult);
-    }
   };
 
   useEffect(() => {
@@ -290,26 +280,30 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
             </div>
           </div>
 
-          {/* Status */}
+          {/* Status - Only show pass/fail, no consent option */}
           <div className="flex items-center gap-2">
             {verificationResult.canSubmit ? (
               <CheckCircle className="h-4 w-4 text-green-400" />
             ) : (
-              <AlertTriangle className="h-4 w-4 text-yellow-400" />
+              <XCircle className="h-4 w-4 text-red-400" />
             )}
             <span className={`text-sm font-medium ${
-              verificationResult.canSubmit ? 'text-green-400' : 'text-yellow-400'
+              verificationResult.canSubmit ? 'text-green-400' : 'text-red-400'
             }`}>
-              {verificationResult.canSubmit ? 'Verification Passed' : 'Verification Required'}
+              {verificationResult.canSubmit ? 'Verification Passed - Can Submit' : 'Verification Failed - Cannot Submit'}
             </span>
           </div>
 
           {/* Warnings */}
           {verificationResult.warnings.length > 0 && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+            <div className={`border rounded-lg p-3 ${
+              verificationResult.canSubmit ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-red-500/10 border-red-500/20'
+            }`}>
               <div className="space-y-1">
                 {verificationResult.warnings.map((warning, index) => (
-                  <div key={index} className="text-yellow-200 text-xs flex items-start gap-2">
+                  <div key={index} className={`text-xs flex items-start gap-2 ${
+                    verificationResult.canSubmit ? 'text-yellow-200' : 'text-red-200'
+                  }`}>
                     <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                     {warning}
                   </div>
@@ -318,43 +312,42 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
             </div>
           )}
 
-          {/* Manual Confirmation */}
+          {/* Failure Instructions Instead of Consent */}
           {!verificationResult.canSubmit && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
               <div className="space-y-3">
-                <p className="text-blue-200 text-sm font-medium">
-                  🔍 Manual Verification Required
+                <p className="text-red-200 text-sm font-medium">
+                  ❌ Verification Failed
                 </p>
-                <p className="text-blue-200 text-xs">
-                  The automatic verification couldn't confirm all requirements. 
-                  Please confirm the authenticity of your submission:
+                <p className="text-red-200 text-xs">
+                  Your photo did not pass the automatic verification requirements. 
+                  To submit a report, you need to:
                 </p>
                 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={userConfirmation}
-                    onChange={(e) => handleUserConfirmation(e.target.checked)}
-                    className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-blue-200 text-sm">
-                    I confirm this photo was taken today at the problem location and shows a real, current issue that needs municipal attention.
-                  </span>
-                </label>
+                <ul className="text-red-200 text-xs space-y-1 list-disc list-inside ml-2">
+                  <li>Be within {VERIFICATION_RADIUS_KM}km of the problem location</li>
+                  <li>Upload a photo taken within the last 24 hours</li>
+                  <li>Use high resolution images (at least 800x600 pixels)</li>
+                  <li>Avoid heavily compressed images</li>
+                </ul>
+                
+                <p className="text-red-200 text-xs font-medium">
+                  Please take a fresh photo at the location or try a different image.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Instructions */}
+          {/* Instructions for Better Photos */}
           <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3">
             <div className="text-indigo-200 text-sm space-y-2">
-              <p className="font-medium">💡 Tips for better verification:</p>
+              <p className="font-medium">💡 Tips for automatic verification:</p>
               <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Take photos directly at the problem location</li>
-                <li>Upload immediately after taking the photo</li>
-                <li>Use high resolution (avoid heavy compression)</li>
-                <li>Ensure good lighting and clear visibility of the issue</li>
-                <li>Include context showing the location/surroundings</li>
+                <li>Go to the actual problem location before taking the photo</li>
+                <li>Take photos immediately with your device camera</li>
+                <li>Use good lighting and avoid blurry images</li>
+                <li>Don't edit, crop, or compress images before uploading</li>
+                <li>Use original camera quality settings</li>
               </ul>
             </div>
           </div>
@@ -364,7 +357,7 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
   );
 };
 
-// Location Verification Component (unchanged)
+// **UPDATED: Location Verification Component with 10km radius**
 const LocationVerification = ({ userLocation, problemLocation }) => {
   const [verification, setVerification] = useState(null);
 
@@ -380,7 +373,7 @@ const LocationVerification = ({ userLocation, problemLocation }) => {
       userLocation.lng, 
       problemLocation.lat, 
       problemLocation.lng, 
-      1 // 1 km radius
+      VERIFICATION_RADIUS_KM // 10 km radius
     );
 
     setVerification(result);
@@ -414,7 +407,7 @@ const LocationVerification = ({ userLocation, problemLocation }) => {
       {!verification.isWithin && (
         <div className="mt-2 text-red-300 text-xs flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />
-          You must be within 1km of the problem location to report it
+          You must be within {VERIFICATION_RADIUS_KM}km of the problem location to report it
         </div>
       )}
     </div>
@@ -487,7 +480,7 @@ export default function RaiseComplaint() {
     });
   };
 
-  // Enhanced handleSubmit with smart verification
+  // **UPDATED: Enhanced handleSubmit with 10km radius validation**
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -513,25 +506,25 @@ export default function RaiseComplaint() {
         }
       }
 
-      // Check location proximity (1km radius)
+      // **UPDATED: Check location proximity (10km radius)**
       const locationCheck = isLocationWithinRadius(
         currentUserLocation.lat,
         currentUserLocation.lng,
         formData.location.coordinates[1], // lat
         formData.location.coordinates[0], // lng
-        1 // 1 km radius
+        VERIFICATION_RADIUS_KM // 10 km radius
       );
 
       if (!locationCheck.isWithin) {
-        setError(`You are ${locationCheck.distance.toFixed(2)}km away from the problem location. You must be within 1km to report this issue.`);
+        setError(`You are ${locationCheck.distance.toFixed(2)}km away from the problem location. You must be within ${VERIFICATION_RADIUS_KM}km to report this issue.`);
         setIsSubmitting(false);
         return;
       }
 
-      // Smart verification logic for images
+      // Strict verification logic for images - NO CONSENT ALLOWED
       if (formData.media && smartVerification) {
         if (!smartVerification.canSubmit) {
-          setError("Please confirm the authenticity of your submission or improve the verification score.");
+          setError("Your photo failed verification and cannot be submitted. Please take a fresh photo at the location or try a different image that meets the requirements.");
           setIsSubmitting(false);
           return;
         }
@@ -551,12 +544,12 @@ export default function RaiseComplaint() {
       submitFormData.append('verification[userLocation]', JSON.stringify(currentUserLocation));
       submitFormData.append('verification[distanceFromUser]', locationCheck.distance.toString());
       submitFormData.append('verification[isLocationVerified]', 'true');
+      submitFormData.append('verification[verificationRadius]', VERIFICATION_RADIUS_KM.toString());
       
       if (smartVerification) {
         submitFormData.append('verification[smartScore]', smartVerification.overallScore.toString());
         submitFormData.append('verification[smartVerified]', smartVerification.canSubmit.toString());
-        submitFormData.append('verification[userConfirmed]', (smartVerification.userConfirmed || false).toString());
-        submitFormData.append('verification[verificationMethod]', 'smart_verification');
+        submitFormData.append('verification[verificationMethod]', 'smart_verification_strict');
         submitFormData.append('verification[locationScore]', smartVerification.locationScore.toString());
         submitFormData.append('verification[timingScore]', smartVerification.timingScore.toString());
         submitFormData.append('verification[qualityScore]', smartVerification.qualityScore.toString());
@@ -953,24 +946,25 @@ export default function RaiseComplaint() {
     navigate(`/user/${userId}`);
   };
 
-  // Check if form can be submitted
+  // Check if form can be submitted - Strict verification required
   const canSubmit = () => {
     const basicRequirements = formData.title && formData.category && formData.description && formData.location.address;
     
     if (!basicRequirements) return false;
     
-    // Check smart verification if image is uploaded
+    // If image is uploaded, smart verification MUST pass - no exceptions
     if (formData.media && smartVerification) {
       return smartVerification.canSubmit;
     }
     
+    // Allow submission without image
     return true;
   };
 
   const getSubmitButtonText = () => {
     if (isSubmitting) return "Verifying & Submitting...";
     if (!formData.title || !formData.category || !formData.description) return "Fill Required Fields";
-    if (formData.media && smartVerification && !smartVerification.canSubmit) return "Confirm Photo Authenticity";
+    if (formData.media && smartVerification && !smartVerification.canSubmit) return "Photo Failed Verification - Cannot Submit";
     return "Submit Complaint";
   };
 
@@ -1161,10 +1155,10 @@ export default function RaiseComplaint() {
               </div>
             </div>
 
-            {/* File Upload with Smart Verification */}
+            {/* File Upload with Smart Verification - Updated Label */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
-                Add Photo (Optional - Smart verification enabled) *
+                Add Photo (Optional - Automatic verification required) *
               </label>
               {previewUrl && (
                 <div className="mb-3 relative">
@@ -1187,7 +1181,7 @@ export default function RaiseComplaint() {
                 <div className="text-center">
                   <Upload className="h-8 w-8 text-white/60 mx-auto mb-2" />
                   <p className="text-white/60 text-sm">Click to upload current issue photo</p>
-                  <p className="text-white/40 text-xs">Max 50MB • JPEG, PNG, WebP only</p>
+                  <p className="text-white/40 text-xs">Max 50MB • JPEG, PNG, WebP only • Must pass verification</p>
                 </div>
                 <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} />
               </label>
@@ -1205,7 +1199,7 @@ export default function RaiseComplaint() {
                 <span className="flex items-center justify-center">
                   <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Verifying & Submitting...
                 </span>
@@ -1220,7 +1214,7 @@ export default function RaiseComplaint() {
                 {!formData.title || !formData.category || !formData.description ? 
                   <p>Please fill all required fields</p> :
                   formData.media && smartVerification && !smartVerification.canSubmit ?
-                    <p>Please improve verification score or confirm photo authenticity</p> : null
+                    <p className="text-red-300">Photo failed verification requirements and cannot be submitted</p> : null
                 }
               </div>
             )}

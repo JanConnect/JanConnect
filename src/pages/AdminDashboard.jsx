@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import {
   Search,
   Filter,
@@ -27,7 +29,10 @@ import {
   Edit3,
   Calendar,
   Eye,
-  Paperclip
+  Paperclip,
+  LogOut,
+  Settings,
+  UserCircle
 } from 'lucide-react';
 
 import GoogleMapView from './GoogleMapView';
@@ -39,14 +44,15 @@ import {
   updateReportStatus,
   getReportById
 } from '../api/report';
-import { getCurrentUser } from '../api/auth';
+import { getCurrentUser, logoutUser as apiLogout } from '../api/auth';
 import { getAllDepartments } from '../api/department';
 import { getAllMunicipalities } from '../api/municipality';
 import Pagination from './Pagination';
+
 // Fallback data generator for when APIs are not available
 const generateFallbackComplaintData = () => {
   const statuses = ['pending', 'acknowledged', 'in-progress', 'resolved', 'rejected'];
-  const categories = ['Infrastructure', 'Sanitation', 'Public Safety', 'Noise Pollution'];
+  const categories = ['Infrastructure', 'Sanitation', 'Street Lighting', 'Water Supply', 'Traffic', 'Parks', 'Other'];
   const areas = ['Downtown', 'Suburbia', 'West End'];
   const priorities = [5, 4, 3, 2, 1];
   
@@ -121,22 +127,18 @@ const generateFallbackComplaintData = () => {
 const extractCoordinates = (location) => {
   if (!location) return null;
   
-  // Check for coordinates array
   if (location.coordinates && Array.isArray(location.coordinates)) {
     return location.coordinates;
   }
   
-  // Check for lat/lng object
   if (location.lat && location.lng) {
     return [location.lat, location.lng];
   }
   
-  // Check for latitude/longitude properties
   if (location.latitude && location.longitude) {
     return [location.latitude, location.longitude];
   }
   
-  // Check for coords array
   if (location.coords && Array.isArray(location.coords)) {
     return location.coords;
   }
@@ -144,7 +146,6 @@ const extractCoordinates = (location) => {
   return null;
 };
 
-// Generate stats based on complaints
 const generateStatsFromComplaints = (complaints) => {
   const total = complaints.length;
   const pending = complaints.filter(c => c.status === 'pending').length;
@@ -163,7 +164,6 @@ const generateStatsFromComplaints = (complaints) => {
   };
 };
 
-// Safe rendering utility to prevent object rendering errors
 const safeRender = (value, fallback = '') => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'object') {
@@ -173,7 +173,6 @@ const safeRender = (value, fallback = '') => {
   return value;
 };
 
-// Simple Info icon component
 const Info = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="12" cy="12" r="10" />
@@ -182,7 +181,137 @@ const Info = ({ className }) => (
   </svg>
 );
 
-// Complaint Card Component - FIXED to prevent object rendering
+// **FIXED: Profile Dropdown Component with React Portal**
+const ProfileDropdown = ({ user, onLogout }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('click', handleClickOutside);
+      return () => window.removeEventListener('click', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  // Calculate dropdown position
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({ 
+        top: rect.bottom + window.scrollY + 8, // 8px gap
+        left: rect.right + window.scrollX - 224 // 224px = dropdown width, right align
+      });
+    }
+  }, [isOpen]);
+
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
+  const handleLogoutClick = () => {
+    setIsOpen(false);
+    onLogout();
+  };
+
+  return (
+    <>
+      <motion.button
+        ref={buttonRef}
+        onClick={toggleDropdown}
+        className="flex items-center gap-2 p-2 bg-white/10 hover:bg-white/15 rounded-xl border border-white/20 transition-all duration-200 relative z-10"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+          <User className="h-4 w-4 text-white" />
+        </div>
+        <span className="text-white text-sm hidden sm:block">{safeRender(user?.name, 'Admin')}</span>
+        <ChevronDown className={`h-4 w-4 text-white/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </motion.button>
+
+      {/* **PORTAL DROPDOWN MENU - FIXES Z-INDEX ISSUES** */}
+      {isOpen && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="fixed bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl overflow-hidden"
+            style={{
+              top: position.top,
+              left: position.left,
+              width: 224,
+              zIndex: 9999
+            }}
+          >
+            {/* User Info Section */}
+            <div className="p-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-white font-medium text-sm">{safeRender(user?.name, 'Admin')}</div>
+                  <div className="text-white/60 text-xs">{safeRender(user?.email, 'admin@janconnect.com')}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div className="py-2">
+              {/* <button
+                onClick={() => {
+                  setIsOpen(false);
+                  // Add profile navigation if needed
+                }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-white/80 hover:bg-white/10 hover:text-white transition-colors text-sm"
+              >
+                <UserCircle className="h-4 w-4" />
+                View Profile
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  // Add settings navigation if needed
+                }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-white/80 hover:bg-white/10 hover:text-white transition-colors text-sm"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button> */}
+
+              {/* Divider */}
+              {/* <div className="border-t border-white/10 my-2"></div> */}
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogoutClick}
+                className="flex items-center gap-3 w-full px-4 py-3 text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors text-sm"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body // **RENDERS TO DOCUMENT.BODY TO ESCAPE PARENT CONTAINERS**
+      )}
+    </>
+  );
+};
+
+// Complaint Card Component
 const ComplaintCard = ({ complaint, onClick, index }) => {
   const statusIcons = {
     pending: <Clock className="h-5 w-5 text-yellow-500" />,
@@ -211,7 +340,6 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
     low: <Info className="h-5 w-5 text-blue-500" />
   };
 
-  // Safe upvote count calculation
   const getUpvoteCount = () => {
     if (typeof complaint.upvoteCount === 'number') return complaint.upvoteCount;
     if (typeof complaint.upvotes === 'number') return complaint.upvotes;
@@ -219,7 +347,6 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
     return 0;
   };
 
-  // Safe updates count calculation
   const getUpdatesCount = () => {
     if (typeof complaint.comments === 'number') return complaint.comments;
     if (Array.isArray(complaint.updates)) return complaint.updates.length;
@@ -232,7 +359,7 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-5 cursor-pointer hover:shadow-lg transition-all duration-300 mb-4 max-w-4xl mx-auto h-32 flex flex-col justify-between"
+      className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-5 cursor-pointer hover:shadow-lg transition-all duration-300 mb-4 max-w-4xl mx-auto min-h-32 flex flex-col justify-between hover:bg-white/15"
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
@@ -242,8 +369,24 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
           </div>
           
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-white text-lg mb-1">{safeRender(complaint.title, 'Untitled Report')}</h3>
-            <p className="text-white/70 text-sm line-clamp-2">{safeRender(complaint.description, 'No description available')}</p>
+            <h3 className="font-semibold text-white text-lg mb-1">
+              {safeRender(complaint.title, 'Untitled Report')}
+            </h3>
+            <p className="text-white/70 text-sm line-clamp-2 mb-2">
+              {safeRender(complaint.description, 'No description available')}
+            </p>
+            
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-indigo-500/20 text-indigo-300 rounded-md border border-indigo-500/30">
+                <FileText className="h-3 w-3" />
+                {safeRender(complaint.category, 'Unknown Category')}
+              </span>
+              
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-white/10 text-white/80 rounded-md border border-white/20">
+                <MapPin className="h-3 w-3" />
+                {safeRender(complaint.area || complaint.municipality?.name, 'Unknown Location')}
+              </span>
+            </div>
           </div>
         </div>
         
@@ -253,16 +396,12 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
               {priorityIcons[complaint.priority] || priorityIcons[complaint.urgency]}
             </div>
             
-            <div className="text-xs font-medium px-3 py-1 rounded-full bg-white/10 text-white">
-              {safeRender(complaint.category, 'Unknown')}
-            </div>
-            
             <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-              complaint.status === 'resolved' ? 'bg-green-500/20 text-green-500' :
-              complaint.status === 'rejected' ? 'bg-red-500/20 text-red-500' :
-              complaint.status === 'in-progress' ? 'bg-blue-500/20 text-blue-500' :
-              complaint.status === 'acknowledged' ? 'bg-blue-500/20 text-blue-500' :
-              'bg-yellow-500/20 text-yellow-500'
+              complaint.status === 'resolved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+              complaint.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+              complaint.status === 'in-progress' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+              complaint.status === 'acknowledged' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+              'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
             }`}>
               {statusText[complaint.status] || 'Unknown'}
             </span>
@@ -274,27 +413,28 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
         </div>
       </div>
       
-      <div className="flex items-center space-x-4 text-white/60 text-sm mt-3">
-        <div className="flex items-center">
-          <MapPin className="h-4 w-4 mr-1" />
-          <span>{safeRender(complaint.area || complaint.municipality?.name, 'Unknown')}</span>
+      <div className="flex items-center justify-between text-white/60 text-sm mt-3">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <ArrowBigUp className="h-4 w-4 mr-1" />
+            <span>{getUpvoteCount()} upvotes</span>
+          </div>
+          
+          <div className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-1" />
+            <span>{getUpdatesCount()} updates</span>
+          </div>
         </div>
         
-        <div className="flex items-center">
-          <ArrowBigUp className="h-4 w-4 mr-1" />
-          <span>{getUpvoteCount()} upvotes</span>
-        </div>
-        
-        <div className="flex items-center">
-          <MessageSquare className="h-4 w-4 mr-1" />
-          <span>{getUpdatesCount()} updates</span>
+        <div className="text-xs">
+          ID: {safeRender(complaint.reportId || `#${String(complaint._id).slice(-4)}`, 'N/A')}
         </div>
       </div>
     </motion.div>
   );
 };
 
-// Filter Bar Component
+// Filter Bar Component 
 const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = [] }) => {
   const statuses = ['all', 'pending', 'acknowledged', 'in-progress', 'resolved', 'rejected'];
   const priorities = [
@@ -304,15 +444,30 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
     { value: '3', label: 'Medium (3)' },
     { value: '2', label: 'Low (2)' },
     { value: '1', label: 'Very Low (1)' },
-    { value: 'high', label: 'High Priority' },
-    { value: 'medium', label: 'Medium Priority' },
-    { value: 'low', label: 'Low Priority' }
+   
   ];
   
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
-  
+
+  const categoryOptions = categories && categories.length > 0 
+    ? categories 
+    : ['Infrastructure', 'Sanitation', 'Street Lighting', 'Water Supply', 'Traffic', 'Parks', 'Other'];
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setIsCategoryOpen(false);
+      setIsStatusOpen(false);
+      setIsPriorityOpen(false);
+    };
+
+    if (isCategoryOpen || isStatusOpen || isPriorityOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [isCategoryOpen, isStatusOpen, isPriorityOpen]);
+
   return (
     <motion.div 
       className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-6 relative z-20 max-w-6xl mx-auto"
@@ -326,48 +481,57 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
           <input
             type="text"
-            placeholder="Search reports..."
+            placeholder="Search reports by title, description, or location..."
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
           />
         </div>
         
         {/* Category Filter */}
         <div className="relative">
           <button
-            onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCategoryOpen(!isCategoryOpen);
+              setIsStatusOpen(false);
+              setIsPriorityOpen(false);
+            }}
+            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
           >
-            <span>{filters.category === 'all' ? 'All Categories' : filters.category}</span>
-            {isCategoryOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="truncate">
+              {filters.category === 'all' ? 'All Categories' : filters.category || 'Select Category'}
+            </span>
+            {isCategoryOpen ? <ChevronUp className="h-4 w-4 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 flex-shrink-0" />}
           </button>
           
           {isCategoryOpen && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-gray-800 border border-white/20 rounded-xl shadow-lg z-30">
+            <div className="absolute top-full left-0 mt-2 w-full bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onFilterChange({ category: 'all' });
                   setIsCategoryOpen(false);
                 }}
-                className={`block w-full text-left px-4 py-2 text-white hover:bg-white/10 ${
-                  filters.category === 'all' ? 'bg-white/20' : ''
+                className={`block w-full text-left px-4 py-3 text-white hover:bg-white/10 transition-colors border-b border-white/10 ${
+                  filters.category === 'all' ? 'bg-white/20 text-blue-200' : ''
                 }`}
               >
                 All Categories
               </button>
-              {categories.map(category => (
+              {categoryOptions.map(category => (
                 <button
                   key={category}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onFilterChange({ category });
                     setIsCategoryOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-white hover:bg-white/10 ${
-                    filters.category === category ? 'bg-white/20' : ''
+                  className={`block w-full text-left px-4 py-3 text-white hover:bg-white/10 transition-colors border-b border-white/10 last:border-b-0 ${
+                    filters.category === category ? 'bg-white/20 text-blue-200' : ''
                   }`}
                 >
-                  {category}
+                  📁 {category}
                 </button>
               ))}
             </div>
@@ -377,27 +541,36 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
         {/* Status Filter */}
         <div className="relative">
           <button
-            onClick={() => setIsStatusOpen(!isStatusOpen)}
-            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsStatusOpen(!isStatusOpen);
+              setIsCategoryOpen(false);
+              setIsPriorityOpen(false);
+            }}
+            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
           >
-            <span>{filters.status === 'all' ? 'All Statuses' : filters.status.replace('-', ' ')}</span>
-            {isStatusOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="truncate">
+              {filters.status === 'all' ? 'All Statuses' : 
+               filters.status ? filters.status.charAt(0).toUpperCase() + filters.status.slice(1).replace('-', ' ') : 'Select Status'}
+            </span>
+            {isStatusOpen ? <ChevronUp className="h-4 w-4 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 flex-shrink-0" />}
           </button>
           
           {isStatusOpen && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-gray-800 border border-white/20 rounded-xl shadow-lg z-30">
+            <div className="absolute top-full left-0 mt-2 w-full bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl z-50">
               {statuses.map(status => (
                 <button
                   key={status}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onFilterChange({ status });
                     setIsStatusOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-white hover:bg-white/10 ${
-                    filters.status === status ? 'bg-white/20' : ''
+                  className={`block w-full text-left px-4 py-3 text-white hover:bg-white/10 transition-colors border-b border-white/10 last:border-b-0 ${
+                    filters.status === status ? 'bg-white/20 text-blue-200' : ''
                   }`}
                 >
-                  {status === 'all' ? 'All Statuses' : status.replace('-', ' ')}
+                  {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
                 </button>
               ))}
             </div>
@@ -407,26 +580,32 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
         {/* Priority Filter */}
         <div className="relative">
           <button
-            onClick={() => setIsPriorityOpen(!isPriorityOpen)}
-            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsPriorityOpen(!isPriorityOpen);
+              setIsCategoryOpen(false);
+              setIsStatusOpen(false);
+            }}
+            className="flex items-center justify-between gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white w-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
           >
-            <span>
+            <span className="truncate">
               {priorities.find(p => p.value === filters.priority)?.label || 'All Priorities'}
             </span>
-            {isPriorityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isPriorityOpen ? <ChevronUp className="h-4 w-4 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 flex-shrink-0" />}
           </button>
           
           {isPriorityOpen && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-gray-800 border border-white/20 rounded-xl shadow-lg z-30">
+            <div className="absolute top-full left-0 mt-2 w-full bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl z-50">
               {priorities.map(priority => (
                 <button
                   key={priority.value}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onFilterChange({ priority: priority.value });
                     setIsPriorityOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-white hover:bg-white/10 ${
-                    filters.priority === priority.value ? 'bg-white/20' : ''
+                  className={`block w-full text-left px-4 py-3 text-white hover:bg-white/10 transition-colors border-b border-white/10 last:border-b-0 ${
+                    filters.priority === priority.value ? 'bg-white/20 text-blue-200' : ''
                   }`}
                 >
                   {priority.label}
@@ -436,6 +615,73 @@ const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = 
           )}
         </div>
       </div>
+
+      {/* Active Filters Display */}
+      {(filters.category !== 'all' || filters.status !== 'all' || filters.priority !== 'all' || filters.search) && (
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
+          <span className="text-white/70 text-sm">Active filters:</span>
+          
+          {filters.category !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded-md text-xs">
+              Category: {filters.category}
+              <button 
+                onClick={() => onFilterChange({ category: 'all' })}
+                className="hover:text-indigo-200"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          
+          {filters.status !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md text-xs">
+              Status: {filters.status}
+              <button 
+                onClick={() => onFilterChange({ status: 'all' })}
+                className="hover:text-blue-200"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          
+          {filters.priority !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded-md text-xs">
+              Priority: {priorities.find(p => p.value === filters.priority)?.label}
+              <button 
+                onClick={() => onFilterChange({ priority: 'all' })}
+                className="hover:text-yellow-200"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          
+          {filters.search && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-300 rounded-md text-xs">
+              Search: "{filters.search}"
+              <button 
+                onClick={() => onFilterChange({ search: '' })}
+                className="hover:text-green-200"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          
+          <button 
+            onClick={() => onFilterChange({ 
+              category: 'all', 
+              status: 'all', 
+              priority: 'all', 
+              search: '' 
+            })}
+            className="text-xs text-white/70 hover:text-white underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -541,7 +787,7 @@ const MediaGallery = ({ media }) => {
   );
 };
 
-// Timeline Component - FIXED to prevent object rendering
+// Timeline Component
 const Timeline = ({ events }) => {
   if (!events || events.length === 0) {
     return <div className="text-white/60 italic">No timeline events yet</div>;
@@ -588,11 +834,10 @@ const Timeline = ({ events }) => {
   );
 };
 
-// Rest of your AdminDashboard component remains exactly the same...
-// Just continue with your existing code from the main component
-
 // Main Admin Dashboard Component
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [complaints, setComplaints] = useState([]);
@@ -621,9 +866,47 @@ const AdminDashboard = () => {
     hasPrevPage: false
   });
 
-  // Rest of your existing AdminDashboard code...
-  // Continue with your fetchData, event handlers, and render logic
-  // The key fixes are in the ComplaintCard and Timeline components above
+  // **UPDATED: Silent Logout handler - No alert, direct logout**
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to call API logout but don't fail if it errors
+      try {
+        await apiLogout();
+      } catch (apiError) {
+        console.warn('API logout failed, proceeding with local logout:', apiError);
+      }
+      
+      // **IMPORTANT: Clear ALL localStorage data**
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Also try to remove specific common keys if localStorage.clear() doesn't work
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('userData');
+      } catch (error) {
+        console.warn('Error clearing individual localStorage items:', error);
+      }
+      
+      // Navigate to login page immediately
+      navigate('/login', { replace: true });
+      
+    } catch (error) {
+      console.error('Logout process failed:', error);
+      
+      // Even if there's an error, clear localStorage and navigate
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate('/login', { replace: true });
+    }
+  };
 
   // Fetch data from backend with fallback
   const fetchData = useCallback(async () => {
@@ -689,11 +972,11 @@ const AdminDashboard = () => {
         departmentsData = departmentsResponse.data.data || departmentsResponse.data || [];
         if (Array.isArray(departmentsData)) {
           const deptCategories = departmentsData.map(d => d.name);
-          setCategories(['Infrastructure', 'Sanitation', 'Public Safety', 'Noise Pollution', ...deptCategories]);
+          setCategories(['Infrastructure', 'Sanitation', 'Street Lighting', 'Water Supply', 'Traffic', 'Parks', 'Other', ...deptCategories]);
         }
       } catch (err) {
         console.warn('Departments API not available:', err.message);
-        setCategories(['Infrastructure', 'Sanitation', 'Public Safety', 'Noise Pollution']);
+        setCategories(['Infrastructure', 'Sanitation', 'Street Lighting', 'Water Supply', 'Traffic', 'Parks', 'Other']);
       }
 
       try {
@@ -720,7 +1003,7 @@ const AdminDashboard = () => {
       const fallbackData = generateFallbackComplaintData();
       setComplaints(fallbackData);
       setStats(generateStatsFromComplaints(fallbackData));
-      setCategories(['Infrastructure', 'Sanitation', 'Public Safety', 'Noise Pollution']);
+      setCategories(['Infrastructure', 'Sanitation', 'Street Lighting', 'Water Supply', 'Traffic', 'Parks', 'Other']);
       setMunicipalities(['Downtown', 'Suburbia', 'West End']);
       setUser({ name: 'Admin', email: 'admin@janconnect.com' });
     } finally {
@@ -732,16 +1015,17 @@ const AdminDashboard = () => {
     fetchData();
   }, [fetchData]);
 
-  // Continue with the rest of your existing code...
-  // All the event handlers, filtering logic, and render logic remain the same
-
-  // Filter and paginate complaints (for fallback data)
+  // Filter and paginate complaints with better category handling
   const getFilteredComplaints = useCallback(() => {
     let filtered = [...complaints];
     
     // Apply filters
     if (filters.category && filters.category !== 'all') {
-      filtered = filtered.filter(c => c.category === filters.category);
+      filtered = filtered.filter(c => {
+        const complaintCategory = c.category || '';
+        return complaintCategory.toLowerCase() === filters.category.toLowerCase() ||
+               complaintCategory === filters.category;
+      });
     }
     
     if (filters.priority && filters.priority !== 'all') {
@@ -758,10 +1042,12 @@ const AdminDashboard = () => {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(c => 
-        c.title.toLowerCase().includes(searchTerm) || 
-        c.description.toLowerCase().includes(searchTerm) ||
-        (c.area && c.area.toLowerCase().includes(searchTerm)) ||
-        (c.municipality?.name && c.municipality.name.toLowerCase().includes(searchTerm))
+        (c.title || '').toLowerCase().includes(searchTerm) || 
+        (c.description || '').toLowerCase().includes(searchTerm) ||
+        (c.category || '').toLowerCase().includes(searchTerm) ||
+        (c.area || '').toLowerCase().includes(searchTerm) ||
+        (c.municipality?.name || '').toLowerCase().includes(searchTerm) ||
+        (c.reportId || '').toLowerCase().includes(searchTerm)
       );
     }
     
@@ -911,7 +1197,6 @@ const AdminDashboard = () => {
   if (currentView === 'detail' && selectedComplaint) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        {/* Background with image */}
         <div className="absolute inset-0 z-0">
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -921,14 +1206,14 @@ const AdminDashboard = () => {
         </div>
 
         <div className="container mx-auto px-4 py-6 relative z-10">
-          {/* Header */}
+          {/* UPDATED: Detail Header with Profile Dropdown */}
           <motion.header
             className="flex items-center justify-between mb-8 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1">
               <motion.button
                 onClick={handleBackToDashboard}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all duration-200"
@@ -938,7 +1223,7 @@ const AdminDashboard = () => {
                 <ArrowLeft className="h-5 w-5 text-white" />
               </motion.button>
               
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold text-white">{safeRender(selectedComplaint.title, 'Report Details')}</h1>
                 <div className="flex items-center gap-3 mt-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -962,8 +1247,8 @@ const AdminDashboard = () => {
                     {selectedComplaint.urgency ? `${selectedComplaint.urgency} Priority` : `Priority ${selectedComplaint.priority}`}
                   </span>
                   
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/20">
-                    {safeRender(selectedComplaint.category, 'Unknown')}
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    📁 {safeRender(selectedComplaint.category, 'Unknown')}
                   </span>
                 </div>
               </div>
@@ -977,6 +1262,9 @@ const AdminDashboard = () => {
               >
                 <Download className="h-5 w-5 text-white" />
               </motion.button>
+              
+              {/* **Profile Dropdown in Detail View** */}
+              <ProfileDropdown user={user} onLogout={handleLogout} />
               
               <motion.button
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all duration-200"
@@ -1238,7 +1526,7 @@ const AdminDashboard = () => {
 
       {/* Main content */}
       <div className="container mx-auto px-4 py-6 relative z-10">
-        {/* Header */}
+        {/* **UPDATED: Header with Profile Dropdown** */}
         <motion.header
           className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg max-w-6xl mx-auto"
           initial={{ opacity: 0, y: -20 }}
@@ -1252,36 +1540,36 @@ const AdminDashboard = () => {
           </div>
           
           <div className="flex items-center gap-4 mt-4 md:mt-0">
+            {/* Refresh Button */}
             <motion.button
               onClick={handleRefresh}
               className="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={loading}
+              title="Refresh Data"
             >
               <RefreshCw className={`h-5 w-5 text-white ${loading ? 'animate-spin' : ''}`} />
             </motion.button>
             
+            {/* Export Button */}
             <motion.button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-white transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              title="Export Reports"
             >
               <Download className="h-4 w-4" />
-              <span className="text-sm">Export</span>
+              <span className="text-sm hidden sm:block">Export</span>
             </motion.button>
-            
-            <div className="flex items-center gap-2 p-2 bg-white/10 rounded-xl border border-white/20">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-white text-sm">{safeRender(user?.name, 'Admin')}</span>
-            </div>
+
+            {/* **Profile Dropdown with Logout** */}
+            <ProfileDropdown user={user} onLogout={handleLogout} />
           </div>
         </motion.header>
 
-        {/* Filter Bar */}
+        {/* Filter Bar with Categories */}
         <FilterBar 
           filters={filters} 
           onFilterChange={handleFilterChange}
@@ -1305,7 +1593,10 @@ const AdminDashboard = () => {
                 <FileText className="h-12 w-12 text-white/50 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">No reports found</h3>
                 <p className="text-white/70 mb-6">
-                  Try adjusting your search or filter criteria to find what you're looking for.
+                  {filteredComplaints.length === 0 ? 
+                    "Try adjusting your search or filter criteria to find what you're looking for." :
+                    "All matching reports are displayed above."
+                  }
                 </p>
                 <button
                   onClick={() => handleFilterChange({ 
@@ -1322,6 +1613,14 @@ const AdminDashboard = () => {
             </motion.div>
           ) : (
             <>
+              {/* Results Summary */}
+              <div className="mb-4 text-center">
+                <p className="text-white/70 text-sm">
+                  Showing {displayedComplaints.length} of {filteredComplaints.length} reports
+                  {filteredComplaints.length !== complaints.length && ` (filtered from ${complaints.length} total)`}
+                </p>
+              </div>
+
               <motion.div
                 className="space-y-4"
                 initial={{ opacity: 0 }}

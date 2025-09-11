@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, MapPin, AlertCircle, Upload, X, Navigation, CheckCircle, Camera, Calendar, AlertTriangle, Info, XCircle } from "lucide-react";
+import { ArrowLeft, MapPin, AlertCircle, Upload, X, Navigation, CheckCircle, Camera, Calendar, AlertTriangle, Info, XCircle, Mic, Square } from "lucide-react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { createReport } from '../api/report';
 import { useTranslation } from "react-i18next"; // Add this import
@@ -442,6 +442,11 @@ export default function RaiseComplaint() {
   const [userCurrentLocation, setUserCurrentLocation] = useState(null);
   const [smartVerification, setSmartVerification] = useState(null);
   
+  // Speech to text states
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState("");
+  const recognitionRef = useRef(null);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [error, setError] = useState("");
@@ -458,6 +463,70 @@ export default function RaiseComplaint() {
   });
 
   const acRef = useRef(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            transcript += event.results[i][0].transcript;
+          }
+        }
+        
+        if (transcript) {
+          setFormData(prev => ({
+            ...prev,
+            description: prev.description + ' ' + transcript
+          }));
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setSpeechError(`Speech recognition error: ${event.error}`);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        if (isListening) {
+          // Restart if still listening
+          recognitionRef.current.start();
+        }
+      };
+    } else {
+      setSpeechError("Speech recognition is not supported in this browser");
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isListening]);
+
+  // Toggle speech recognition
+  const toggleListening = () => {
+    if (isListening) {
+      setIsListening(false);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    } else {
+      setSpeechError("");
+      setIsListening(true);
+      if (recognitionRef.current) {
+        recognitionRef.current.start();
+      }
+    }
+  };
 
   // Get user's current location for verification
   const getUserCurrentLocation = () => {
@@ -1066,10 +1135,55 @@ export default function RaiseComplaint() {
               </select>
             </div>
 
-            {/* Description */}
+            {/* Description with Speech-to-Text */}
             <div>
-              <label className="block text-white/80 text-sm font-medium mb-2">{t("description")} *</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} rows={3} placeholder={t("provideDetails")} required className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60" />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-white/80 text-sm font-medium">{t("description")} *</label>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`flex items-center text-sm px-3 py-1 rounded-lg transition-all duration-200 ${
+                    isListening 
+                      ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-400/30' 
+                      : 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-400/30'
+                  }`}
+                >
+                  {isListening ? (
+                    <>
+                      <Square className="h-3 w-3 mr-1" />
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-3 w-3 mr-1" />
+                      Voice Input
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {speechError && (
+                <div className="mb-2 p-2 bg-red-500/10 border border-red-400/30 rounded-lg text-red-300 text-xs">
+                  {speechError}
+                </div>
+              )}
+              
+              {isListening && (
+                <div className="mb-2 p-2 bg-blue-500/10 border border-blue-400/30 rounded-lg text-blue-300 text-xs flex items-center">
+                  <div className="animate-pulse h-2 w-2 bg-blue-400 rounded-full mr-2"></div>
+                  Listening... Speak now
+                </div>
+              )}
+              
+              <textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleInputChange} 
+                rows={3} 
+                placeholder={t("provideDetails")} 
+                required 
+                className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60" 
+              />
             </div>
 
             {/* Location */}
@@ -1225,4 +1339,4 @@ export default function RaiseComplaint() {
       </div>
     </div>
   );
-}
+}8

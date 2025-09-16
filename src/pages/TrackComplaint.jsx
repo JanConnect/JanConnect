@@ -4,23 +4,61 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Search, Clock, CheckCircle, XCircle, AlertTriangle, 
   FileText, Calendar, MapPin, Building, User, Loader2, Plus, Star,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Camera, Mic, Volume2, Download, Maximize2
 } from "lucide-react";
 import { getUserReports } from '../api/report';
-import { useTranslation } from "react-i18next"; // Add this import
+import { useTranslation } from "react-i18next";
+
+// **Fixed Image Modal Component with Higher Z-Index**
+const ImageModal = ({ isOpen, onClose, imageUrl, title }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ zIndex: 9999 }} 
+    >
+      <motion.div 
+        className="relative max-w-4xl max-h-[90vh] w-full"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-white/80 hover:text-white text-xl z-10"
+        >
+          ✕
+        </button>
+        <img 
+          src={imageUrl} 
+          alt={title}
+          className="w-full h-full object-contain rounded-lg"
+          onClick={onClose}
+        />
+        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+          <p className="text-white text-sm">{title}</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 export default function TrackComplaint() {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const { t } = useTranslation(); // Add this hook
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [complaints, setComplaints] = useState([]);
   const [filteredComplaints, setFilteredComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedComplaint, setSelectedComplaint] = useState(null); // For inline details
-  const [detailModalOpen, setDetailModalOpen] = useState(false); // For detailed modal view
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  
+  // Image modal state
+  const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', title: '' });
 
   useEffect(() => {
     const fetchUserComplaints = async () => {
@@ -63,7 +101,8 @@ export default function TrackComplaint() {
       filtered = filtered.filter(complaint => 
         complaint.title.toLowerCase().includes(query) || 
         complaint.reportId.toLowerCase().includes(query) ||
-        complaint.category.toLowerCase().includes(query)
+        complaint.category.toLowerCase().includes(query) ||
+        (complaint.contentSummary && complaint.contentSummary.toLowerCase().includes(query))
       );
     }
 
@@ -101,6 +140,12 @@ export default function TrackComplaint() {
         bg: "bg-red-500/10", 
         text: "text-red-400",
         border: "border-red-500/20"
+      },
+      "pending_assignment": { 
+        icon: Clock, 
+        bg: "bg-purple-500/10", 
+        text: "text-purple-400",
+        border: "border-purple-500/20"
       }
     };
     return configs[status] || configs["pending"];
@@ -153,6 +198,33 @@ export default function TrackComplaint() {
     setDetailModalOpen(true);
   };
 
+  // Image modal functions
+  const openImageModal = (imageUrl, title) => {
+    setImageModal({ isOpen: true, imageUrl, title });
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, imageUrl: '', title: '' });
+  };
+
+  // Helper function to get content display
+  const getContentDisplay = (complaint) => {
+    if (complaint.contentSummary) {
+      return complaint.contentSummary;
+    } else if (complaint.description) {
+      return complaint.description;
+    } else if (complaint.voiceMessage?.url) {
+      return '🎤 Voice Message';
+    } else {
+      return 'No description available';
+    }
+  };
+
+  // Helper function to format status for translation
+  const formatStatusForTranslation = (status) => {
+    return status.replace('-', '').replace('_', '');
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Background */}
@@ -166,7 +238,7 @@ export default function TrackComplaint() {
 
       {/* Header */}
       <motion.header 
-        className="fixed top-0 left-0 w-full z-50  backdrop-blur-md"
+        className="fixed top-0 left-0 w-full z-50 backdrop-blur-md"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", damping: 20, stiffness: 300 }}
@@ -174,7 +246,7 @@ export default function TrackComplaint() {
         <div className="container mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
           <motion.button 
             onClick={() => navigate(-1)}
-            className="flex items-center text-white p-2 rounded-xl hover:bg-white/20 transition-all duration-200 backdrop-blur-sm "
+            className="flex items-center text-white p-2 rounded-xl hover:bg-white/20 transition-all duration-200 backdrop-blur-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -222,7 +294,7 @@ export default function TrackComplaint() {
           >
             {[
               { label: t("total"), count: complaints.length, status: "all" },
-              { label: t("pending"), count: getStatusCount("pending"), status: "pending" },
+              { label: t("pending"), count: getStatusCount("pending") + getStatusCount("pending_assignment"), status: "pending" },
               { label: t("inProgress"), count: getStatusCount("in-progress"), status: "in-progress" },
               { label: t("resolved"), count: getStatusCount("resolved"), status: "resolved" }
             ].map((stat, index) => (
@@ -317,13 +389,15 @@ export default function TrackComplaint() {
                             <div className="flex items-center gap-2">
                               <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}>
                                 <StatusIcon size={14} />
-                                <span className="capitalize">{t(complaint.status.replace('-', ' '))}</span>
+                                <span className="capitalize">{t(formatStatusForTranslation(complaint.status))}</span>
                               </div>
                               {isSelected ? <ChevronUp size={20} className="text-white/60" /> : <ChevronDown size={20} className="text-white/60" />}
                             </div>
                           </div>
                           
-                          <p className="text-white/80 text-sm mb-3 line-clamp-2">{complaint.description}</p>
+                          <p className="text-white/80 text-sm mb-3 line-clamp-2">
+                            {getContentDisplay(complaint)}
+                          </p>
                           
                           {/* Location & Stats */}
                           <div className="flex justify-between items-center text-xs text-white/60">
@@ -337,11 +411,13 @@ export default function TrackComplaint() {
                             <div className="flex items-center gap-3">
                               <span>👍 {complaint.upvoteCount || 0}</span>
                               <span>{t("priority")}: {complaint.priority || 1}/5</span>
+                              {complaint.voiceMessage?.url && <span title="Has voice message">🎤</span>}
+                              {(complaint.image?.url || complaint.media?.url) && <span title="Has photo">📷</span>}
                             </div>
                           </div>
                         </div>
 
-                        {/* Expanded Details */}
+                        {/* **IMPROVED: Expanded Details** */}
                         <AnimatePresence>
                           {isSelected && (
                             <motion.div
@@ -356,8 +432,22 @@ export default function TrackComplaint() {
                                   {/* Left Column */}
                                   <div className="space-y-4">
                                     <div>
-                                      <h4 className="text-sm font-medium text-white/80 mb-2">{t("fullDescription")}</h4>
-                                      <p className="text-white/90 text-sm leading-relaxed">{complaint.description}</p>
+                                      <h4 className="text-sm font-medium text-white/80 mb-2">
+                                        {complaint.voiceMessage?.url ? t("content") : t("fullDescription")}
+                                      </h4>
+                                      {complaint.description ? (
+                                        <p className="text-white/90 text-sm leading-relaxed">{complaint.description}</p>
+                                      ) : complaint.voiceMessage?.url ? (
+                                        <div className="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
+                                          <span className="text-blue-400">🎤</span>
+                                          <span className="text-white/90 text-sm">Voice message recorded</span>
+                                          {complaint.voiceMessage.transcription && (
+                                            <span className="text-white/60 text-xs">({complaint.voiceMessage.transcription.substring(0, 50)}...)</span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <p className="text-white/60 text-sm italic">No description available</p>
+                                      )}
                                     </div>
                                     
                                     {complaint.location?.address && (
@@ -394,28 +484,60 @@ export default function TrackComplaint() {
 
                                   {/* Right Column */}
                                   <div className="space-y-4">
-                                    {/* Timeline */}
-                                    {complaint.updates && complaint.updates.length > 0 && (
-                                      <div>
-                                        <h4 className="text-sm font-medium text-white/80 mb-3">{t("progressTimeline")}</h4>
-                                        <div className="space-y-3 max-h-48 overflow-y-auto">
-                                          {complaint.updates.map((update, updateIndex) => (
-                                            <div key={updateIndex} className="flex gap-3">
-                                              <div className="flex flex-col items-center">
-                                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                                {updateIndex < complaint.updates.length - 1 && (
-                                                  <div className="w-0.5 h-8 bg-blue-400/30 mt-1"></div>
-                                                )}
-                                              </div>
-                                              <div className="flex-1">
-                                                <p className="text-white/90 text-sm">{update.message}</p>
-                                                <p className="text-white/50 text-xs mt-1">{formatDate(update.date)}</p>
-                                              </div>
-                                            </div>
-                                          ))}
+                                    {/* **FIXED: Enhanced Timeline with Creation Entry** */}
+                                    <div>
+                                      <h4 className="text-sm font-medium text-white/80 mb-3">{t("progressTimeline")}</h4>
+                                      <div className="space-y-3 max-h-48 overflow-y-auto">
+                                        {/* Creation entry - always show first */}
+                                        <div className="flex gap-3">
+                                          <div className="flex flex-col items-center">
+                                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                            {(complaint.updates && complaint.updates.length > 0) && (
+                                              <div className="w-0.5 h-8 bg-blue-400/30 mt-1"></div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1">
+                                            <p className="text-white/90 text-sm font-medium">Report Submitted</p>
+                                            <p className="text-white/50 text-xs mt-1 flex items-center gap-1">
+                                              <Calendar size={10} />
+                                              {formatDate(complaint.createdAt || complaint.date)}
+                                            </p>
+                                          </div>
                                         </div>
+                                        
+                                        {/* Actual updates */}
+                                        {complaint.updates && complaint.updates.map((update, updateIndex) => (
+                                          <div key={updateIndex} className="flex gap-3">
+                                            <div className="flex flex-col items-center">
+                                              <div className={`w-2 h-2 rounded-full ${
+                                                updateIndex === complaint.updates.length - 1 
+                                                  ? complaint.status === 'resolved' 
+                                                    ? 'bg-green-400' 
+                                                    : 'bg-blue-400'
+                                                  : 'bg-blue-400'
+                                              }`}></div>
+                                              {updateIndex < complaint.updates.length - 1 && (
+                                                <div className="w-0.5 h-8 bg-blue-400/30 mt-1"></div>
+                                              )}
+                                            </div>
+                                            <div className="flex-1">
+                                              <p className="text-white/90 text-sm">{update.message}</p>
+                                              <p className="text-white/50 text-xs mt-1 flex items-center gap-1">
+                                                <Calendar size={10} />
+                                                {formatDate(update.date)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                        
+                                        {/* Show "No updates yet" if no updates */}
+                                        {(!complaint.updates || complaint.updates.length === 0) && (
+                                          <div className="text-center py-2">
+                                            <p className="text-white/50 text-xs italic">No updates yet</p>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                    </div>
 
                                     {/* Rating & Feedback */}
                                     {(complaint.rating || complaint.feedback) && (
@@ -432,6 +554,19 @@ export default function TrackComplaint() {
                                         {complaint.feedback && (
                                           <p className="text-white/80 text-sm italic">"{complaint.feedback}"</p>
                                         )}
+                                      </div>
+                                    )}
+
+                                    {/* Verification Info */}
+                                    {complaint.verificationData && (
+                                      <div>
+                                        <h4 className="text-sm font-medium text-white/80 mb-2">Verification</h4>
+                                        <div className="space-y-1 text-xs text-white/70">
+                                          {complaint.verificationData.smartVerified && (
+                                            <div>✅ Smart verified ({complaint.verificationData.smartScore}% score)</div>
+                                          )}
+                                          <div>📍 Distance: {complaint.verificationData.distanceFromUser?.toFixed(2)}km</div>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -494,7 +629,19 @@ export default function TrackComplaint() {
         </motion.div>
       </div>
 
-      {/* Complaint Detail Modal */}
+      {/* **FIXED: Image Modal with Higher Z-Index** */}
+      <AnimatePresence>
+        {imageModal.isOpen && (
+          <ImageModal 
+            isOpen={imageModal.isOpen}
+            onClose={closeImageModal}
+            imageUrl={imageModal.imageUrl}
+            title={imageModal.title}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Detail Modal */}
       <AnimatePresence>
         {detailModalOpen && selectedComplaint && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -534,33 +681,91 @@ export default function TrackComplaint() {
                 </div>
               </div>
               
+              {/* Enhanced description section */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-2">{t("description")}</h3>
-                <p className="text-white/80">{selectedComplaint.description}</p>
-              </div>
-              
-              {/* Progress Timeline */}
-              {selectedComplaint.updates && selectedComplaint.updates.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">{t("progressTimeline")}</h3>
-                  <div className="space-y-4">
-                    {selectedComplaint.updates.map((update, index) => (
-                      <div key={index} className="flex">
-                        <div className="flex flex-col items-center mr-4">
-                          <div className="w-3 h-3 bg-indigo-400 rounded-full"></div>
-                          {index < selectedComplaint.updates.length - 1 && (
-                            <div className="w-0.5 h-12 bg-indigo-400/30 mt-1"></div>
-                          )}
-                        </div>
-                        <div className="pb-4">
-                          <p className="text-white font-medium">{update.message}</p>
-                          <p className="text-white/60 text-sm">{formatDetailDate(update.date)}</p>
-                        </div>
-                      </div>
-                    ))}
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {selectedComplaint.voiceMessage?.url ? t("content") : t("description")}
+                </h3>
+                {selectedComplaint.description ? (
+                  <p className="text-white/80">{selectedComplaint.description}</p>
+                ) : selectedComplaint.voiceMessage?.url ? (
+                  <div className="p-3 bg-white/5 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mic className="h-5 w-5 text-blue-400" />
+                      <span className="text-white/80">Voice message recorded</span>
+                    </div>
+                    <audio 
+                      controls 
+                      src={selectedComplaint.voiceMessage.url}
+                      className="w-full"
+                      style={{ filter: 'invert(1) hue-rotate(180deg)' }}
+                    >
+                      Your browser does not support the audio element.
+                    </audio>
+                    {selectedComplaint.voiceMessage.transcription && (
+                      <p className="text-white/60 text-sm mt-2">{selectedComplaint.voiceMessage.transcription}</p>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-white/60 italic">No description available</p>
+                )}
+              </div>
+
+              {/* Media in Detail Modal */}
+              {(selectedComplaint.image?.url || selectedComplaint.media?.url) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-white mb-2">Photo Evidence</h3>
+                  <img 
+                    src={selectedComplaint.image?.url || selectedComplaint.media?.url} 
+                    alt="Complaint evidence" 
+                    className="w-full max-w-md rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => openImageModal(selectedComplaint.image?.url || selectedComplaint.media?.url, selectedComplaint.title)}
+                  />
                 </div>
               )}
+              
+              {/* **FIXED: Progress Timeline in Detail Modal** */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">{t("progressTimeline")}</h3>
+                <div className="space-y-4">
+                  {/* Creation entry */}
+                  <div className="flex">
+                    <div className="flex flex-col items-center mr-4">
+                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                      {(selectedComplaint.updates && selectedComplaint.updates.length > 0) && (
+                        <div className="w-0.5 h-12 bg-indigo-400/30 mt-1"></div>
+                      )}
+                    </div>
+                    <div className="pb-4">
+                      <p className="text-white font-medium">Report Submitted</p>
+                      <p className="text-white/60 text-sm">{formatDetailDate(selectedComplaint.createdAt || selectedComplaint.date)}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Updates */}
+                  {selectedComplaint.updates && selectedComplaint.updates.map((update, index) => (
+                    <div key={index} className="flex">
+                      <div className="flex flex-col items-center mr-4">
+                        <div className="w-3 h-3 bg-indigo-400 rounded-full"></div>
+                        {index < selectedComplaint.updates.length - 1 && (
+                          <div className="w-0.5 h-12 bg-indigo-400/30 mt-1"></div>
+                        )}
+                      </div>
+                      <div className="pb-4">
+                        <p className="text-white font-medium">{update.message}</p>
+                        <p className="text-white/60 text-sm">{formatDetailDate(update.date)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* No updates message */}
+                  {(!selectedComplaint.updates || selectedComplaint.updates.length === 0) && (
+                    <div className="text-center py-4">
+                      <p className="text-white/50 text-sm italic">No updates yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               {/* Feedback Section */}
               {(selectedComplaint.rating || selectedComplaint.feedback) && (

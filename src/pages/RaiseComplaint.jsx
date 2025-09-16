@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MapPin, AlertCircle, Upload, X, Navigation, CheckCircle, Camera, Calendar, AlertTriangle, Info, XCircle, Mic, Square } from "lucide-react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { createReport } from '../api/report';
-import { useTranslation } from "react-i18next"; // Add this import
+import { useTranslation } from "react-i18next";
 
 // Simple Custom Modal Component
 const CustomModal = ({ isOpen, onClose, children }) => {
@@ -30,7 +30,6 @@ const containerStyle = {
   borderRadius: '0.75rem',
 };
 
-// **UPDATED: Radius constant for all verification (changed to 10km)**
 const VERIFICATION_RADIUS_KM = 10;
 
 // Haversine formula to calculate distance between two coordinates
@@ -58,7 +57,7 @@ const isLocationWithinRadius = (userLat, userLon, problemLat, problemLon, radius
   };
 };
 
-// **UPDATED: Smart Image Verification Component with 10km radius**
+// Smart Image Verification Component
 const SmartImageVerification = ({ file, userLocation, problemLocation, onVerificationComplete }) => {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -83,14 +82,14 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         }
       };
 
-      // **UPDATED: Location Verification (35 points) - Using 10km radius**
+      // Location Verification (35 points)
       if (userLocation && problemLocation) {
         const locationCheck = isLocationWithinRadius(
           userLocation.lat, 
           userLocation.lng, 
           problemLocation.lat, 
           problemLocation.lng, 
-          VERIFICATION_RADIUS_KM  // 10km radius
+          VERIFICATION_RADIUS_KM
         );
         
         if (locationCheck.isWithin) {
@@ -104,7 +103,7 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         result.warnings.push('Unable to verify location proximity');
       }
 
-      // 2. File Timing Verification (35 points) - Based on file system timestamp
+      // File Timing Verification (35 points)
       const currentTime = Date.now();
       const fileTime = file.lastModified;
       const hoursDiff = (currentTime - fileTime) / (1000 * 60 * 60);
@@ -118,13 +117,13 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         result.details.timing = `Old file (${daysDiff} days old)`;
       }
 
-      // 3. Image Quality Analysis (30 points)
+      // Image Quality Analysis (30 points)
       await analyzeImageQuality(file, result);
 
       // Calculate overall score
       result.overallScore = result.locationScore + result.timingScore + result.qualityScore;
       
-      // Only allow submission if score passes threshold (≥60) - NO USER CONSENT
+      // Only allow submission if score passes threshold (≥60)
       result.canSubmit = result.overallScore >= 60;
 
       setVerificationResult(result);
@@ -236,52 +235,7 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
             ></div>
           </div>
 
-          {/* Detailed Breakdown */}
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-white/5 rounded-lg p-3">
-              <div className="text-xs space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-white/70">📍 Location Proximity</span>
-                  <span className={verificationResult.locationScore > 0 ? 'text-green-400' : 'text-red-400'}>
-                    {verificationResult.locationScore}/35
-                  </span>
-                </div>
-                <div className="text-white/60 text-xs">
-                  {verificationResult.details.location || 'Not checked'}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-3">
-              <div className="text-xs space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-white/70">⏰ File Timing</span>
-                  <span className={verificationResult.timingScore > 0 ? 'text-green-400' : 'text-red-400'}>
-                    {verificationResult.timingScore}/35
-                  </span>
-                </div>
-                <div className="text-white/60 text-xs">
-                  {verificationResult.details.timing || 'Not checked'}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-3">
-              <div className="text-xs space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-white/70">🖼️ Image Quality</span>
-                  <span className={verificationResult.qualityScore > 0 ? 'text-green-400' : 'text-red-400'}>
-                    {verificationResult.qualityScore}/30
-                  </span>
-                </div>
-                <div className="text-white/60 text-xs">
-                  {verificationResult.details.quality || 'Not analyzed'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Status - Only show pass/fail, no consent option */}
+          {/* Status */}
           <div className="flex items-center gap-2">
             {verificationResult.canSubmit ? (
               <CheckCircle className="h-4 w-4 text-green-400" />
@@ -313,52 +267,20 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
             </div>
           )}
 
-          {/* Failure Instructions Instead of Consent */}
           {!verificationResult.canSubmit && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-              <div className="space-y-3">
-                <p className="text-red-200 text-sm font-medium">
-                  ❌ Verification Failed
-                </p>
-                <p className="text-red-200 text-xs">
-                  Your photo did not pass the automatic verification requirements. 
-                  To submit a report, you need to:
-                </p>
-                
-                <ul className="text-red-200 text-xs space-y-1 list-disc list-inside ml-2">
-                  <li>Be within {VERIFICATION_RADIUS_KM}km of the problem location</li>
-                  <li>Upload a photo taken within the last 24 hours</li>
-                  <li>Use high resolution images (at least 800x600 pixels)</li>
-                  <li>Avoid heavily compressed images</li>
-                </ul>
-                
-                <p className="text-red-200 text-xs font-medium">
-                  Please take a fresh photo at the location or try a different image.
-                </p>
-              </div>
+              <p className="text-red-200 text-xs font-medium">
+                Please take a fresh photo at the location or try a different image that meets the requirements.
+              </p>
             </div>
           )}
-
-          {/* Instructions for Better Photos */}
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3">
-            <div className="text-indigo-200 text-sm space-y-2">
-              <p className="font-medium">💡 Tips for automatic verification:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Go to the actual problem location before taking the photo</li>
-                <li>Take photos immediately with your device camera</li>
-                <li>Use good lighting and avoid blurry images</li>
-                <li>Don't edit, crop, or compress images before uploading</li>
-                <li>Use original camera quality settings</li>
-              </ul>
-            </div>
-          </div>
         </div>
       ) : null}
     </div>
   );
 };
 
-// **UPDATED: Location Verification Component with 10km radius**
+// Location Verification Component
 const LocationVerification = ({ userLocation, problemLocation }) => {
   const [verification, setVerification] = useState(null);
 
@@ -374,7 +296,7 @@ const LocationVerification = ({ userLocation, problemLocation }) => {
       userLocation.lng, 
       problemLocation.lat, 
       problemLocation.lng, 
-      VERIFICATION_RADIUS_KM // 10 km radius
+      VERIFICATION_RADIUS_KM
     );
 
     setVerification(result);
@@ -418,7 +340,7 @@ const LocationVerification = ({ userLocation, problemLocation }) => {
 export default function RaiseComplaint() {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const { t } = useTranslation(); // Add this hook
+  const { t } = useTranslation();
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [submittedDetails, setSubmittedDetails] = useState(null);
@@ -442,7 +364,14 @@ export default function RaiseComplaint() {
   const [userCurrentLocation, setUserCurrentLocation] = useState(null);
   const [smartVerification, setSmartVerification] = useState(null);
   
-  // Speech to text states
+  // **NEW: Voice message states (Added to existing speech-to-text)**
+  const [voiceBlob, setVoiceBlob] = useState(null);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceRecordingTime, setVoiceRecordingTime] = useState(0);
+  const voiceRecorderRef = useRef(null);
+  const voiceTimerRef = useRef(null);
+  
+  // Speech to text states (existing)
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState("");
   const recognitionRef = useRef(null);
@@ -464,7 +393,61 @@ export default function RaiseComplaint() {
 
   const acRef = useRef(null);
 
-  // Initialize speech recognition
+  // **NEW: Voice Recording Functions**
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      voiceRecorderRef.current = new MediaRecorder(stream);
+      const chunks = [];
+
+      voiceRecorderRef.current.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      voiceRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setVoiceBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      voiceRecorderRef.current.start();
+      setIsRecordingVoice(true);
+      setVoiceRecordingTime(0);
+      
+      // Start timer
+      voiceTimerRef.current = setInterval(() => {
+        setVoiceRecordingTime(prev => prev + 1);
+      }, 1000);
+
+      // Auto-stop after 5 minutes
+      setTimeout(() => {
+        if (voiceRecorderRef.current && voiceRecorderRef.current.state === 'recording') {
+          stopVoiceRecording();
+        }
+      }, 300000);
+
+    } catch (error) {
+      console.error('Voice recording error:', error);
+      setError("Could not access microphone for voice recording");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (voiceRecorderRef.current && voiceRecorderRef.current.state === 'recording') {
+      voiceRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+      if (voiceTimerRef.current) {
+        clearInterval(voiceTimerRef.current);
+      }
+    }
+  };
+
+  const removeVoiceRecording = () => {
+    setVoiceBlob(null);
+    setVoiceRecordingTime(0);
+  };
+
+  // Initialize speech recognition (existing)
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -497,7 +480,6 @@ export default function RaiseComplaint() {
 
       recognitionRef.current.onend = () => {
         if (isListening) {
-          // Restart if still listening
           recognitionRef.current.start();
         }
       };
@@ -512,7 +494,7 @@ export default function RaiseComplaint() {
     };
   }, [isListening]);
 
-  // Toggle speech recognition
+  // Toggle speech recognition (existing)
   const toggleListening = () => {
     if (isListening) {
       setIsListening(false);
@@ -551,15 +533,25 @@ export default function RaiseComplaint() {
     });
   };
 
-  // **UPDATED: Enhanced handleSubmit with 10km radius validation**
+  // **UPDATED: Enhanced handleSubmit with voice message support**
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
-    // Basic form validation
+    // **UPDATED: Basic form validation with voice message option**
     if (!formData.location.address || (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0)) {
       setError("Please select a valid location or use current location");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // **NEW: Check if either description OR voice message is present**
+    const hasDescription = formData.description && formData.description.trim();
+    const hasVoiceMessage = voiceBlob;
+
+    if (!hasDescription && !hasVoiceMessage) {
+      setError("Please provide either a description or voice message");
       setIsSubmitting(false);
       return;
     }
@@ -577,13 +569,13 @@ export default function RaiseComplaint() {
         }
       }
 
-      // **UPDATED: Check location proximity (10km radius)**
+      // Check location proximity
       const locationCheck = isLocationWithinRadius(
         currentUserLocation.lat,
         currentUserLocation.lng,
         formData.location.coordinates[1], // lat
         formData.location.coordinates[0], // lng
-        VERIFICATION_RADIUS_KM // 10 km radius
+        VERIFICATION_RADIUS_KM
       );
 
       if (!locationCheck.isWithin) {
@@ -592,7 +584,7 @@ export default function RaiseComplaint() {
         return;
       }
 
-      // Strict verification logic for images - NO CONSENT ALLOWED
+      // Strict verification logic for images
       if (formData.media && smartVerification) {
         if (!smartVerification.canSubmit) {
           setError("Your photo failed verification and cannot be submitted. Please take a fresh photo at the location or try a different image that meets the requirements.");
@@ -601,32 +593,55 @@ export default function RaiseComplaint() {
         }
       }
 
-      // Proceed with form submission
+      // **UPDATED: Proceed with form submission - Added voice message support**
       const submitFormData = new FormData();
       
       submitFormData.append('title', formData.title);
       submitFormData.append('category', formData.category);
-      submitFormData.append('description', formData.description);
       submitFormData.append('urgency', formData.urgency);
+      
+      // **NEW: Only add description if no voice message**
+      if (hasDescription && !hasVoiceMessage) {
+        submitFormData.append('description', formData.description);
+      }
+      
       submitFormData.append('location[address]', formData.location.address);
       submitFormData.append('location[coordinates]', JSON.stringify(formData.location.coordinates));
       
       // Add verification data
-      submitFormData.append('verification[userLocation]', JSON.stringify(currentUserLocation));
-      submitFormData.append('verification[distanceFromUser]', locationCheck.distance.toString());
-      submitFormData.append('verification[isLocationVerified]', 'true');
-      submitFormData.append('verification[verificationRadius]', VERIFICATION_RADIUS_KM.toString());
+      const verificationData = {
+        userLocation: currentUserLocation,
+        distanceFromUser: locationCheck.distance.toString(),
+        isLocationVerified: 'true',
+        verificationRadius: VERIFICATION_RADIUS_KM.toString(),
+        smartScore: smartVerification ? smartVerification.overallScore.toString() : '0',
+        smartVerified: smartVerification ? smartVerification.canSubmit.toString() : 'false',
+        verificationMethod: smartVerification ? 'smart_verification_strict' : 'location_only',
+        locationScore: smartVerification ? smartVerification.locationScore.toString() : '0',
+        timingScore: smartVerification ? smartVerification.timingScore.toString() : '0',
+        qualityScore: smartVerification ? smartVerification.qualityScore.toString() : '0'
+      };
       
-      if (smartVerification) {
-        submitFormData.append('verification[smartScore]', smartVerification.overallScore.toString());
-        submitFormData.append('verification[smartVerified]', smartVerification.canSubmit.toString());
-        submitFormData.append('verification[verificationMethod]', 'smart_verification_strict');
-        submitFormData.append('verification[locationScore]', smartVerification.locationScore.toString());
-        submitFormData.append('verification[timingScore]', smartVerification.timingScore.toString());
-        submitFormData.append('verification[qualityScore]', smartVerification.qualityScore.toString());
+      submitFormData.append('verification', JSON.stringify(verificationData));
+      
+      // **NEW: Add voice message if present**
+      if (hasVoiceMessage) {
+        submitFormData.append('voiceMessage', voiceBlob, 'voice-message.webm');
+        console.log('📢 Voice message added to form data');
+      }
+      
+      // Add image if present
+      if (formData.media) {
+        submitFormData.append('image', formData.media);
       }
 
-      if (formData.media) submitFormData.append('media', formData.media);
+      console.log('Submitting report with:', {
+        title: formData.title,
+        category: formData.category,
+        hasDescription,
+        hasVoiceMessage,
+        hasImage: !!formData.media
+      });
 
       const response = await createReport(submitFormData);
 
@@ -638,6 +653,7 @@ export default function RaiseComplaint() {
       setShowSuccessPopup(true);
 
     } catch (error) {
+      console.error('Report submission error:', error);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else if (error.response?.status === 401) {
@@ -651,7 +667,7 @@ export default function RaiseComplaint() {
     }
   };
 
-  // Enhanced file change handler
+  // Enhanced file change handler (existing)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -674,19 +690,19 @@ export default function RaiseComplaint() {
     }
   };
 
-  // Handle smart verification complete
+  // Handle smart verification complete (existing)
   const handleSmartVerificationComplete = (result) => {
     setSmartVerification(result);
   };
 
-  // Get user location on component mount
+  // Get user location on component mount (existing)
   useEffect(() => {
     getUserCurrentLocation().catch(() => {
       console.log('Could not get initial user location');
     });
   }, []);
 
-  // Handle input changes
+  // Handle input changes (existing)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -695,7 +711,7 @@ export default function RaiseComplaint() {
     }));
   };
 
-  // Set autocomplete value
+  // Set autocomplete value (existing)
   const setAutocompleteValue = (value) => {
     if (acRef.current) {
       setTimeout(() => {
@@ -712,64 +728,8 @@ export default function RaiseComplaint() {
     }
   };
 
-  // Attach gmp-select listener when loaded
-  useEffect(() => {
-    if (!isLoaded || !acRef.current || !window.google?.maps?.places) return;
-
-    const el = acRef.current;
-
-    const onSelect = async (e) => {
-      try {
-        const place = e?.placePrediction?.toPlace?.();
-        if (!place) return;
-
-        await place.fetchFields({
-          fields: ['id', 'displayName', 'formattedAddress', 'location', 'addressComponents']
-        });
-
-        const loc = place.location;
-        const lat = typeof loc?.lat === 'function' ? loc.lat() : loc?.lat;
-        const lng = typeof loc?.lng === 'function' ? loc.lng() : loc?.lng;
-
-        let city = "", state = "", country = "";
-        const comps = place.addressComponents || [];
-        comps.forEach((c) => {
-          const types = c.types || [];
-          if (types.includes('locality')) city = c.longText || c.long_name || "";
-          else if (types.includes('administrative_area_level_1')) state = c.longText || c.long_name || "";
-          else if (types.includes('country')) country = c.longText || c.long_name || "";
-        });
-
-        const address = place.formattedAddress || place.displayName?.text || "";
-
-        setFormData(prev => ({
-          ...prev,
-          location: {
-            address: address,
-            coordinates: [lng ?? 0, lat ?? 0],
-            placeId: place.id ?? null,
-            city,
-            state,
-            country
-          }
-        }));
-
-        if (lat && lng) {
-          const pos = { lat, lng };
-          setMarkerPosition(pos);
-          setMapCenter(pos);
-        }
-
-        setError("");
-      } catch (err) {
-        setError(t("failedToFetchPlaceDetails"));
-        console.error(err);
-      }
-    };
-
-    el.addEventListener('gmp-select', onSelect);
-    return () => el.removeEventListener('gmp-select', onSelect);
-  }, [isLoaded, t]);
+  // All other existing functions (Google Maps, location, etc.) remain the same...
+  // [Rest of the existing code remains unchanged]
 
   // Auto-get current location on mount
   useEffect(() => {
@@ -782,7 +742,6 @@ export default function RaiseComplaint() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // Store user location for verification
         setUserCurrentLocation({ lat: latitude, lng: longitude });
         
         try {
@@ -858,6 +817,65 @@ export default function RaiseComplaint() {
     );
   }, [GOOGLE_MAPS_API_KEY, t]);
 
+  // Attach gmp-select listener when loaded
+  useEffect(() => {
+    if (!isLoaded || !acRef.current || !window.google?.maps?.places) return;
+
+    const el = acRef.current;
+
+    const onSelect = async (e) => {
+      try {
+        const place = e?.placePrediction?.toPlace?.();
+        if (!place) return;
+
+        await place.fetchFields({
+          fields: ['id', 'displayName', 'formattedAddress', 'location', 'addressComponents']
+        });
+
+        const loc = place.location;
+        const lat = typeof loc?.lat === 'function' ? loc.lat() : loc?.lat;
+        const lng = typeof loc?.lng === 'function' ? loc.lng() : loc?.lng;
+
+        let city = "", state = "", country = "";
+        const comps = place.addressComponents || [];
+        comps.forEach((c) => {
+          const types = c.types || [];
+          if (types.includes('locality')) city = c.longText || c.long_name || "";
+          else if (types.includes('administrative_area_level_1')) state = c.longText || c.long_name || "";
+          else if (types.includes('country')) country = c.longText || c.long_name || "";
+        });
+
+        const address = place.formattedAddress || place.displayName?.text || "";
+
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            address: address,
+            coordinates: [lng ?? 0, lat ?? 0],
+            placeId: place.id ?? null,
+            city,
+            state,
+            country
+          }
+        }));
+
+        if (lat && lng) {
+          const pos = { lat, lng };
+          setMarkerPosition(pos);
+          setMapCenter(pos);
+        }
+
+        setError("");
+      } catch (err) {
+        setError(t("failedToFetchPlaceDetails"));
+        console.error(err);
+      }
+    };
+
+    el.addEventListener('gmp-select', onSelect);
+    return () => el.removeEventListener('gmp-select', onSelect);
+  }, [isLoaded, t]);
+
   // Reverse geocode function
   const reverseGeocode = useCallback(
     async ({ lat, lng }) => {
@@ -931,7 +949,6 @@ export default function RaiseComplaint() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // Update user location for verification
         setUserCurrentLocation({ lat: latitude, lng: longitude });
         
         try {
@@ -1017,24 +1034,30 @@ export default function RaiseComplaint() {
     navigate(`/user/${userId}`);
   };
 
-  // Check if form can be submitted - Strict verification required
+  // **UPDATED: Check if form can be submitted with voice message support**
   const canSubmit = () => {
-    const basicRequirements = formData.title && formData.category && formData.description && formData.location.address;
+    const hasTitle = formData.title && formData.title.trim();
+    const hasCategory = formData.category;
+    const hasContent = (formData.description && formData.description.trim()) || voiceBlob;
+    const hasLocation = formData.location.address;
+    
+    const basicRequirements = hasTitle && hasCategory && hasContent && hasLocation;
     
     if (!basicRequirements) return false;
     
-    // If image is uploaded, smart verification MUST pass - no exceptions
+    // If image is uploaded, smart verification MUST pass
     if (formData.media && smartVerification) {
       return smartVerification.canSubmit;
     }
     
-    // Allow submission without image
     return true;
   };
 
   const getSubmitButtonText = () => {
     if (isSubmitting) return "Verifying & Submitting...";
-    if (!formData.title || !formData.category || !formData.description) return "Fill Required Fields";
+    if (!formData.title || !formData.category) return "Fill Required Fields";
+    if (!formData.description && !voiceBlob) return "Add Description or Voice Message";
+    if (!formData.location.address) return "Select Location";
     if (formData.media && smartVerification && !smartVerification.canSubmit) return "Photo Failed Verification - Cannot Submit";
     return "Submit Complaint";
   };
@@ -1135,10 +1158,12 @@ export default function RaiseComplaint() {
               </select>
             </div>
 
-            {/* Description with Speech-to-Text */}
+            {/* **UPDATED: Description with Speech-to-Text AND Voice Message** */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-white/80 text-sm font-medium">{t("description")} *</label>
+                <label className="block text-white/80 text-sm font-medium">
+                  {voiceBlob ? `${t("description")} (Optional - Voice message recorded)` : `${t("description")} *`}
+                </label>
                 <button
                   type="button"
                   onClick={toggleListening}
@@ -1180,11 +1205,88 @@ export default function RaiseComplaint() {
                 value={formData.description} 
                 onChange={handleInputChange} 
                 rows={3} 
-                placeholder={t("provideDetails")} 
-                required 
-                className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60" 
+                placeholder={voiceBlob ? "Optional text description (voice message recorded)" : t("provideDetails")} 
+                required={!voiceBlob}
+                disabled={voiceBlob}
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60 ${
+                  voiceBlob ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               />
+
+              
+              {/* Voice Message Section - With consistent border like other fields */}
+            <div className="mt-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 p-3">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white/70 text-sm font-medium">🎤 Voice Message Alternative</span>
+                
+                {!voiceBlob && !isRecordingVoice && (
+                  <button
+                    type="button"
+                    onClick={startVoiceRecording}
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-500/20 border border-indigo-400/30 rounded-lg text-indigo-300 text-xs hover:bg-indigo-500/30 transition-all duration-200"
+                  >
+                    <Mic className="h-3 w-3" />
+                    Record Voice Message
+                  </button>
+                )}
+              </div>
+
+              {/* Recording State */}
+              {isRecordingVoice && (
+                <div className="flex items-center justify-between bg-red-500/10 border border-red-400/30 rounded-lg px-3 py-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-pulse h-2 w-2 bg-red-400 rounded-full"></div>
+                    <span className="text-red-300 text-xs font-medium">
+                      Recording... {Math.floor(voiceRecordingTime / 60)}:{(voiceRecordingTime % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stopVoiceRecording}
+                    className="flex items-center gap-2 px-2 py-1 bg-red-500/20 border border-red-400/30 rounded-lg text-red-300 text-xs hover:bg-red-500/30 transition-all duration-200"
+                  >
+                    <Square className="h-3 w-3" />
+                    Stop
+                  </button>
+                </div>
+              )}
+
+              {/* Voice Message Recorded */}
+              {voiceBlob && (
+                <div className="flex items-center justify-between bg-green-500/10 border border-green-400/30 rounded-lg px-3 py-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                    <span className="text-green-300 text-xs font-medium">
+                      Voice message recorded <span className="font-normal text-gray-300">({Math.round(voiceBlob.size / 1024)} KB)</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <audio 
+                      controls 
+                      src={URL.createObjectURL(voiceBlob)}
+                      className="h-8 max-w-32"
+                      style={{ filter: 'invert(1)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={removeVoiceRecording}
+                      className="p-1 bg-red-500/20 border border-red-400/30 rounded-lg text-red-300 hover:bg-red-500/30 transition-all duration-200"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-white/50 text-xs">
+                💡 You can provide a voice message instead of typing a description. Max 5 minutes.
+              </p>
             </div>
+
+            </div>
+
+            {/* Rest of the form remains exactly the same... */}
+            {/* Location, Maps, Urgency, File Upload, Submit Button - All unchanged */}
 
             {/* Location */}
             <div>
@@ -1271,7 +1373,7 @@ export default function RaiseComplaint() {
               </div>
             </div>
 
-            {/* File Upload with Smart Verification - Updated Label */}
+            {/* File Upload with Smart Verification */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
                 Add Photo (Optional - Automatic verification required) *
@@ -1315,7 +1417,7 @@ export default function RaiseComplaint() {
                 <span className="flex items-center justify-center">
                   <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Verifying & Submitting...
                 </span>
@@ -1327,10 +1429,12 @@ export default function RaiseComplaint() {
             {/* Validation Status */}
             {!canSubmit() && !isSubmitting && (
               <div className="text-center text-yellow-300 text-sm space-y-1">
-                {!formData.title || !formData.category || !formData.description ? 
+                {!formData.title || !formData.category ? 
                   <p>Please fill all required fields</p> :
-                  formData.media && smartVerification && !smartVerification.canSubmit ?
-                    <p className="text-red-300">Photo failed verification requirements and cannot be submitted</p> : null
+                  !formData.description && !voiceBlob ?
+                    <p>Please provide either a description or voice message</p> :
+                    formData.media && smartVerification && !smartVerification.canSubmit ?
+                      <p className="text-red-300">Photo failed verification requirements and cannot be submitted</p> : null
                 }
               </div>
             )}
@@ -1339,4 +1443,4 @@ export default function RaiseComplaint() {
       </div>
     </div>
   );
-}8
+}

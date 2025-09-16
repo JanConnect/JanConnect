@@ -1,45 +1,62 @@
 import { api } from "./index.js";
 
-// Create a new municipality (Admin only)
-export const createMunicipality = (data) => {
-  return api.post('/municipality/create', data, {
-    headers: { "Content-Type": "application/json" },
-  });
-};
-
-// Get all municipalities with filters
+// Get all municipalities with filtering
 export const getAllMunicipalities = (params = {}) => {
-  return api.get('/municipality', { params });
-};
-
-// Get specific municipality by ID
-export const getMunicipalityById = (municipalityId) => {
-  return api.get(`/municipality/${municipalityId}`);
+    return api.get('/municipalities', { params });
 };
 
 // Get municipalities near a location
 export const getMunicipalitiesNearLocation = (params = {}) => {
-  return api.get('/municipality/near', { params });
+    return api.get('/municipalities/near', { params });
 };
 
-// Update municipality (Admin only)
+// Get specific municipality by ID
+export const getMunicipalityById = (municipalityId) => {
+    return api.get(`/municipalities/${municipalityId}`);
+};
+
+// Get municipality analytics
+export const getMunicipalityAnalytics = (municipalityId, params = {}) => {
+    return api.get(`/municipalities/${municipalityId}/analytics`, { params });
+};
+
+// Create municipality (Super Admin only)
+export const createMunicipality = (data) => {
+    return api.post('/municipalities/create', data, {
+        headers: { 
+            "Content-Type": "application/json" 
+        },
+    });
+};
+
+// Update municipality (Super Admin only)
 export const updateMunicipality = (municipalityId, data) => {
-  return api.patch(`/municipality/${municipalityId}`, data, {
-    headers: { "Content-Type": "application/json" },
-  });
+    return api.patch(`/municipalities/${municipalityId}`, data, {
+        headers: { 
+            "Content-Type": "application/json" 
+        },
+    });
 };
 
-// Delete municipality (Admin only)
+// Delete municipality (Super Admin only)
 export const deleteMunicipality = (municipalityId) => {
-  return api.delete(`/municipality/${municipalityId}`);
+    return api.delete(`/municipalities/${municipalityId}`);
 };
 
 // Add department to municipality (Admin only)
-export const addDepartmentToMunicipality = (municipalityId, departmentId) => {
-  return api.post(`/municipality/${municipalityId}/departments/${departmentId}`);
+export const addDepartmentToMunicipality = (municipalityId, data) => {
+    return api.post(`/municipalities/${municipalityId}/departments`, data, {
+        headers: { 
+            "Content-Type": "application/json" 
+        },
+    });
 };
 
-// Remove department from municipality (Admin only)
-export const removeDepartmentFromMunicipality = (municipalityId, departmentId) => {
-  return api.delete(`/municipality/${municipalityId}/departments/${departmentId}`);
+// Manual assign report to department (Admin only)
+export const manualAssignReport = (municipalityId, data) => {
+    return api.post(`/municipalities/${municipalityId}/assign-report`, data, {
+        headers: { 
+            "Content-Type": "application/json" 
+        },
+    });
 };

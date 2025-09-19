@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {LogOut,Menu,X,AlertCircle,Search,CheckCircle,ChevronDown,ChevronUp,MapPin,Users,Clock,ArrowRight,BarChart3,TrendingUp,ArrowBigUp,Calendar,Building,User,Star,Languages,} from "lucide-react";
-import { Globe3D } from "../components/Globe3D";
+import { Globe3D } from "../pages/Globe3D";
 import LionComponent from "../pages/LionComponent";
 import {BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,LineChart,Line,Legend,} from "recharts";
 import ScrollHeatmap from "../pages/ScrollHeatmap";
@@ -13,7 +13,8 @@ import { multilingualComplaints } from "../data/multilingualComplaints";
 import { multilingualDepartmentData } from "../data/multilingualComplaints";
 import { multilingualReportsData } from "../data/multilingualComplaints";
 import Chatbot from "./ChatBot";
-
+import {AnalyticsChartsSection,DepartmentPerformanceChart,ReportsTimelineChart,CustomBarTooltip,CustomLineTooltip} from "../pages/Charts";
+import TrendingComplaints from "../pages/TrendingComplaints";
 export default function UserPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -116,14 +117,7 @@ useEffect(() => {
   const [reportsOverTimeData, setReportsOverTimeData] = useState(getReportsData());
 
   const sortedComplaints = useMemo(() => {
-    const severityOrder = {
-      High: 0,
-      Medium: 1,
-      Low: 2,
-      उच्च: 0,
-      मध्यम: 1,
-      कम: 2,
-    };
+    const severityOrder = {High: 0,Medium: 1,Low: 2,उच्च: 0,मध्यम: 1,कम: 2,};
     return [...trendingComplaints].sort((a, b) => {
       return severityOrder[a.severity] - severityOrder[b.severity];
     });
@@ -797,302 +791,29 @@ useEffect(() => {
         </div>
 
         {/* Right Section - Trending Complaints */}
-        <div className="w-full lg:w-1/2 backdrop-blur-md rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {t("trendingComplaints")}
-            </h2>
-            <div className="flex items-center text-white/60 text-sm">
-              <Users className="h-4 w-4 mr-1" />
-              <span>
-                {t("totalReports", { count: sortedComplaints.length })}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-            {sortedComplaints
-              .slice(0, visibleComplaints)
-              .map((complaint, index) => (
-                <motion.div
-                  key={complaint.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
-                  onClick={() => openComplaintDetail(complaint)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <MapPin className="h-4 w-4 text-blue-400 mr-2" />
-                        <span className="text-white font-medium">
-                          {complaint.area}
-                        </span>
-                        <span
-                          className={`ml-3 px-2 py-1 rounded-full text-xs border ${getSeverityColor(
-                            complaint.severity
-                          )}`}
-                        >
-                          {getSeverityIcon(complaint.severity)}{" "}
-                          {translateSeverity(complaint.severity)}
-                        </span>
-                      </div>
-                      <h3 className="text-white text-sm font-semibold mb-2">
-                        {complaint.title}
-                      </h3>
-                      <div className="flex items-center justify-between text-xs text-white/60">
-                        <div className="flex items-center">
-                          <Users className="h-3 w-3 mr-1" />
-                          <span>
-                            {complaint.reports} {t("reports")}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{formatTimeAgo(complaint.time)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className="flex flex-col items-center ml-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <motion.button
-                        onClick={(e) => handleUpvote(complaint.id, e)}
-                        className={`p-1 rounded-full ${
-                          upvotedComplaints.has(complaint.id)
-                            ? "bg-blue-500/30 text-blue-300"
-                            : "bg-white/10 text-white/60 hover:bg-white/20"
-                        } transition-all duration-200`}
-                        whileTap={{ scale: 0.9 }}
-                        title={t("upvote")}
-                      >
-                        <ArrowBigUp className="h-4 w-4" />
-                      </motion.button>
-                      <span className="text-xs text-white/80 mt-1">
-                        {complaint.upvotes}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-          </div>
-
-          {sortedComplaints.length > 5 && (
-            <div className="mt-6 flex justify-center">
-              {visibleComplaints < sortedComplaints.length ? (
-                <motion.button
-                  onClick={loadMoreComplaints}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center px-4 py-2 bg-indigo-600/30 hover:bg-indigo-600/40 text-white rounded-full border border-indigo-500/50 transition-all duration-300"
-                >
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  {t("loadMore")} ({sortedComplaints.length - visibleComplaints}{" "}
-                  {t("remaining")})
-                </motion.button>
-              ) : (
-                <motion.button
-                  onClick={showLessComplaints}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center px-4 py-2 bg-gray-600/30 hover:bg-gray-600/40 text-white rounded-full border border-gray-500/50 transition-all duration-300"
-                >
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  {t("showLess")}
-                </motion.button>
-              )}
-            </div>
-          )}
-        </div>
+        <TrendingComplaints
+          sortedComplaints={sortedComplaints}
+          visibleComplaints={visibleComplaints}
+          upvotedComplaints={upvotedComplaints}
+          getSeverityColor={getSeverityColor}
+          getSeverityIcon={getSeverityIcon}
+          translateSeverity={translateSeverity}
+          formatTimeAgo={formatTimeAgo}
+          handleUpvote={handleUpvote}
+          openComplaintDetail={openComplaintDetail}
+          loadMoreComplaints={loadMoreComplaints}
+          showLessComplaints={showLessComplaints}
+        />
       </div>
 
-      {/* Analytics Charts Section */}
-      <div className="w-full p-4 mt-8 relative z-10">
-        <div className=" backdrop-blur-md rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {t("performanceAnalytics")}
-            </h2>
-            <div className="flex space-x-2 bg-white/10 backdrop-blur-sm rounded-xl p-1">
-              <button
-                onClick={() => setActiveChartTab("department")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center ${
-                  activeChartTab === "department"
-                    ? "bg-indigo-600 text-white shadow-lg"
-                    : "bg-transparent text-white/70 hover:bg-white/10"
-                }`}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                {t("departmentPerformance")}
-              </button>
-              <button
-                onClick={() => setActiveChartTab("reports")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center ${
-                  activeChartTab === "reports"
-                    ? "bg-indigo-600 text-white shadow-lg"
-                    : "bg-transparent text-white/70 hover:bg-white/10"
-                }`}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                {t("reportsTimeline")}
-              </button>
-            </div>
-          </div>
-
-          <div className="h-80">
-            {activeChartTab === "department" ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={departmentPerformanceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
-                  barSize={35}
-                >
-                  {/* Gradient Definitions */}
-                  <defs>
-                    <linearGradient
-                      id="resolvedGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#34D399" stopOpacity={0.9} />
-                      <stop
-                        offset="100%"
-                        stopColor="#10B981"
-                        stopOpacity={0.6}
-                      />
-                    </linearGradient>
-                    <linearGradient
-                      id="pendingGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#FDE68A" stopOpacity={0.9} />
-                      <stop
-                        offset="100%"
-                        stopColor="#F59E0B"
-                        stopOpacity={0.6}
-                      />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.1)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="department"
-                    // angle={-45}
-                    textAnchor="end"
-                    height={60}
-                    tick={{
-                      fill: "rgba(255,255,255,0.8)",
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                    interval={0}
-                  />
-                  <YAxis
-                    tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-                    label={{
-                      value: `${t('resolutionRate', { defaultValue: 'Resolution Rate' })} (%)`,
-                      angle: -90,
-                      position: "insideLeft",
-                      style: {
-                        fill: "rgba(255,255,255,0.8)",
-                        fontSize: 12,
-                        fontWeight: 500,
-                      },
-                    }}
-                    domain={[0, 100]}
-                  />
-                  <Tooltip
-                    content={<CustomBarTooltip />}
-                    cursor={{ fill: "rgba(255,255,255,0.1)" }}
-                  />
-
-                  {/* Bars with gradient */}
-                  <Bar
-                    dataKey="resolved"
-                    name="Resolved"
-                    fill="url(#resolvedGradient)"
-                    radius={[6, 6, 0, 0]}
-                    background={{ fill: "rgba(255,255,255,0.05)", radius: 6 }}
-                  />
-                  <Bar
-                    dataKey="pending"
-                    name="Pending"
-                    fill="url(#pendingGradient)"
-                    radius={[6, 6, 0, 0]}
-                    background={{ fill: "rgba(255,255,255,0.05)", radius: 6 }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={reportsOverTimeData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.1)"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fill: "rgba(255,255,255,0.7)" }}
-                  />
-                  <YAxis tick={{ fill: "rgba(255,255,255,0.7)" }} />
-                  <Tooltip content={<CustomLineTooltip />} />
-                  <Legend
-                    wrapperStyle={{
-                      color: "rgba(255,255,255,0.7)",
-                      paddingTop: "20px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="reports"
-                    name="Total Reports"
-                    stroke="#3B82F6"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#3B82F6" }}
-                    activeDot={{ r: 6, fill: "#3B82F6" }}
-                  />
-                  <Line type="monotone" dataKey="resolved" name="Resolved Cases" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: "#10B981" }} activeDot={{ r: 6, fill: "#10B981" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-        <div className="w-full flex justify-center items-center text-center mt-6">
-          <h1 className="text-[5vw] md:text-[3vw] font-bold text-white">
-            {t("liveComplaintsHeatmap")}
-          </h1>
-        </div>
-      </div>
-      <div
-        style={{
-          background: "#081025",
-          minHeight: "100vh",
-          color: "#e6eef8",
-          padding: 0,
-        }}
-      >
-        <header
-          style={{
-            padding: "1rem 1.25rem",
-            fontSize: "1.05rem",
-            fontWeight: 600,
-          }}
-        >
+      <AnalyticsChartsSection 
+        departmentPerformanceData={departmentPerformanceData}
+        reportsOverTimeData={reportsOverTimeData}
+        activeChartTab={activeChartTab}
+        setActiveChartTab={setActiveChartTab}
+      />
+      <div style={{  background: "#081025",  minHeight: "100vh",  color: "#e6eef8",  padding: 0,}}>
+        <header style={{  padding: "1rem 1.25rem",  fontSize: "1.05rem",  fontWeight: 600,}}>
           JanConnect — Scroll Heatmap demo
         </header>
         <main>

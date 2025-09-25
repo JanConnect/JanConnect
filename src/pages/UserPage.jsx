@@ -817,7 +817,7 @@ useEffect(() => {
           JanConnect — Scroll Heatmap demo
         </header>
         <main>
-          <ScrollHeatmap />
+          {/* <ScrollHeatmap /> */}
         </main>
       </div>
 

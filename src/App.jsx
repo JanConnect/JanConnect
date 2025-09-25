@@ -37,7 +37,7 @@ function LayoutWrapper({ children }) {
 
 function App() {
   return (
-    <Router basename="/JanConnect">
+    <Router >
       <LayoutWrapper>
         <Routes>
           <Route path="/" element={<Home />} />

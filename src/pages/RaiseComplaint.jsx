@@ -507,11 +507,15 @@ export default function RaiseComplaint() {
 
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ['places'],
-    id: 'maps-script-places'
-  });
+  // ✅ Move this to the top of your file (outside the component)
+const GOOGLE_MAPS_LIBRARIES = ['places'];
+
+// Inside your component:
+const { isLoaded } = useJsApiLoader({
+  googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  libraries: GOOGLE_MAPS_LIBRARIES, // ✅ Use constant
+  id: 'maps-script-places'
+});
 
   const acRef = useRef(null);
 

@@ -1203,7 +1203,10 @@ export default function RaiseComplaint() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/userpagebg.jpg')" }} />
+<div
+  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userpagebg.jpg')` }}
+></div>
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       </div>
 
@@ -1514,7 +1517,11 @@ export default function RaiseComplaint() {
               </label>
               {previewUrl && (
                 <div className="mb-3 relative">
-                  <img src={previewUrl} alt="Preview" className="w-full h-32 object-cover rounded-xl" />
+<img
+  src={previewUrl}
+  alt="Preview"
+  className="w-full h-32 object-cover rounded-xl"
+/>
                   <button type="button" onClick={removeFile} className="absolute top-2 right-2 p-1 bg-red-500/70 rounded-full hover:bg-red-500/90">
                     <X className="h-4 w-4 text-white" />
                   </button>

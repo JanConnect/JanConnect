@@ -1510,10 +1510,11 @@ const MediaGallery = ({ media }) => {
         {mediaArray.map((item, index) => (
           <div key={item.id || index} className="relative group overflow-hidden rounded-xl">
             <img
-              src={item.url}
-              alt="Report media"
-              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+  src={`${import.meta.env.BASE_URL}${item.url}`}
+  alt="Report media"
+  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+/>
+
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
               <button className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
                 <Eye className="h-5 w-5 text-white" />
@@ -1610,12 +1611,13 @@ const Timeline = ({ events }) => {
             {event.media && Array.isArray(event.media) && event.media.length > 0 && (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {event.media.map((mediaUrl, mediaIndex) => (
-                  <img 
-                    key={mediaIndex}
-                    src={mediaUrl}
-                    alt={`Update media ${mediaIndex + 1}`}
-                    className="w-full h-20 object-cover rounded-lg"
-                  />
+                  <img
+  key={mediaIndex}
+  src={`${import.meta.env.BASE_URL}${mediaUrl}`}
+  alt={`Update media ${mediaIndex + 1}`}
+  className="w-full h-20 object-cover rounded-lg"
+/>
+
                 ))}
               </div>
             )}
@@ -1694,10 +1696,11 @@ const CommentForm = ({ onAddComment, isSubmitting }) => {
           {mediaFiles.map((file, index) => (
             <div key={index} className="relative">
               <img
-                src={URL.createObjectURL(file)}
-                alt={`Preview ${index + 1}`}
-                className="w-full h-20 object-cover rounded-lg"
-              />
+  src={URL.createObjectURL(file)}
+  alt={`Preview ${index + 1}`}
+  className="w-full h-20 object-cover rounded-lg"
+/>
+
               <button
                 type="button"
                 onClick={() => removeFile(index)}
@@ -2554,15 +2557,16 @@ useEffect(() => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative"
-      style={{
-        backgroundImage: "url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
+    <div
+  className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative"
+  style={{
+    backgroundImage: `url('${import.meta.env.BASE_URL}images/local-bg.jpg')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+  }}
+>
+
       {/* Semi-transparent overlay */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
       

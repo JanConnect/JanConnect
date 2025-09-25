@@ -79,10 +79,10 @@ export default function ResolvedComplaints() {
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Background matching the login page exactly */}
       <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/userloginbg6.jpg')" }}
-        ></div>
+        <div
+  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userloginbg6.jpg')` }}
+></div>
         {/* Exact same glassmorphism overlay as login page */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       </div>

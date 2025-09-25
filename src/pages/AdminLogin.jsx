@@ -81,10 +81,10 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background image with glassmorphism overlay */}
       <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/dirtybglog.jpg')" }}
-        ></div>
+        <div
+  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/dirtybglog.jpg')` }}
+></div>
         {/* Enhanced glassmorphism overlay */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       </div>
@@ -197,11 +197,12 @@ export default function AdminLogin() {
         }`}>
           <div className="group relative w-full max-w-xl cursor-pointer">
             <div className="relative h-[600px] w-full rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
-              <img 
-                src="/images/cleangb2.jpg" 
-                alt="Admin access to JanConnect" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+             <img
+  src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
+  alt="Admin access to JanConnect"
+  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+/>
+
               {/* Enhanced gradient overlay for better text visibility */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70"></div>
               

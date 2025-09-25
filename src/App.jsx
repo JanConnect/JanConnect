@@ -13,7 +13,6 @@ import AdminDashboard from './pages/AdminDashboard';
 // import './i18n';
 // import ComplaintDetail from "./pages/ComplaintDetail";
 
-
 function LayoutWrapper({ children }) {
   const location = useLocation();
 
@@ -21,10 +20,11 @@ function LayoutWrapper({ children }) {
   const hiddenRoutes = ["/signup", "/login", "/admin/login"];
 
   // Hide layout if pathname matches any hidden route
-  // or starts with /user/
+  // or starts with /user/ or /admin/
   const hideLayout =
-    hiddenRoutes.includes(location.pathname) || location.pathname.startsWith("/user/") ||
-  location.pathname.startsWith("/admin/");
+    hiddenRoutes.includes(location.pathname) ||
+    location.pathname.startsWith("/user/") ||
+    location.pathname.startsWith("/admin/");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -37,7 +37,7 @@ function LayoutWrapper({ children }) {
 
 function App() {
   return (
-    <Router>
+    <Router basename="/JanConnect">
       <LayoutWrapper>
         <Routes>
           <Route path="/" element={<Home />} />

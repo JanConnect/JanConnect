@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
@@ -236,7 +236,8 @@ function TransparentGlobe({ radius = 1 }) {
 
 export function Globe3D({ complaints }) {
   const R = 1;
-  const SOUTH_LIMIT = -0.6 * R; // adjust: no pins below this Y
+  const SOUTH_LIMIT = -0.6 * R;
+  const [canvasReady, setCanvasReady] = useState(false);
 
   const pins = useMemo(() => {
     return complaints
@@ -251,36 +252,87 @@ export function Globe3D({ complaints }) {
     return generateRandomPins(200, 1.02).filter((pos) => pos[1] > SOUTH_LIMIT);
   }, []);
 
+  // Add a small delay to ensure canvas has proper dimensions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCanvasReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Add resize observer to handle dimension changes
+  const canvasRef = useRef();
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasReady(true);
+        }
+      }
+    });
+
+    observer.observe(canvasRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  if (!canvasReady) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-lg">
+        <div className="text-white/60">Loading globe...</div>
+      </div>
+    );
+  }
+
   return (
-    <Canvas
-      dpr={[1, 2]}
-      camera={{ position: [0, 0, 3.5], fov: 45 }}
-    >
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 3, 3]} intensity={1.1} />
-      <directionalLight position={[-3, -2, -3]} intensity={0.5} />
+    <div ref={canvasRef} className="w-full h-full">
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 3.5], fov: 45 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          // Add error handling for WebGL context
+          onError: (error) => {
+            console.error('WebGL error:', error);
+          }
+        }}
+        onCreated={({ gl }) => {
+          // Force context to be current and validate dimensions
+          gl.getContext().getParameter(gl.getContext().MAX_VIEWPORT_DIMS);
+        }}
+      >
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[3, 3, 3]} intensity={1.1} />
+        <directionalLight position={[-3, -2, -3]} intensity={0.5} />
 
-      <group>
-        <TransparentGlobe radius={R} />
+        <group>
+          <TransparentGlobe radius={R} />
 
-        {pins.map((p) => (
-          <group key={p.id} position={p.pos.clone().multiplyScalar(1.02)}>
-            <RedPin position={[0, 0, 0]} label={p.area} sublabel={p.title} />
-          </group>
-        ))}
+          {pins.map((p) => (
+            <group key={p.id} position={p.pos.clone().multiplyScalar(1.02)}>
+              <RedPin position={[0, 0, 0]} label={p.area} sublabel={p.title} />
+            </group>
+          ))}
 
-        {randomPins.map((pos, i) => (
-          <SmallPin key={i} position={pos} />
-        ))}
-      </group>
+          {randomPins.map((pos, i) => (
+            <SmallPin key={i} position={pos} />
+          ))}
+        </group>
 
-      <OrbitControls
-        enablePan={false}
-        enableZoom={false}
-        enableDamping
-        dampingFactor={0.08}
-        rotateSpeed={0.5}
-      />
-    </Canvas>
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          enableDamping
+          dampingFactor={0.08}
+          rotateSpeed={0.5}
+        />
+      </Canvas>
+    </div>
   );
 }

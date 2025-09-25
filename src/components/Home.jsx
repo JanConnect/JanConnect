@@ -158,10 +158,11 @@ export default function ImpactHeroSlider({
         <SwiperSlide>
           <section className="relative h-[100svh] w-full overflow-hidden">
             <img
-              src={dirtyBg}
-              alt="Unclean City"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+  src={`${import.meta.env.BASE_URL}images/dirtyBg.jpg`}
+  alt="Unclean City"
+  className="absolute inset-0 h-full w-full object-cover"
+/>
+
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
             <Particles variant="dust" />
 

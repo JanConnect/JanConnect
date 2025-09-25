@@ -34,16 +34,17 @@ const defaultDirtyBg = "/images/dirtybg.jpg";
 const defaultCleanBg = "/images/cleanbg.jpg";
 
 const defaultDirtyThumbs = [
-  "/images/dirty6.jpg",
-  "/images/dirtyc5.jpg",
-  "/images/dirtyc2.jpg",
+  `${import.meta.env.BASE_URL}images/dirty6.jpg`,
+  `${import.meta.env.BASE_URL}images/dirtyc5.jpg`,
+  `${import.meta.env.BASE_URL}images/dirtyc2.jpg`,
 ];
 
 const defaultCleanThumbs = [
-  "/images/cleanc1.jpg",
-  "/images/cleanc2.jpg",
-  "/images/cleanc3.jpg",
+  `${import.meta.env.BASE_URL}images/cleanc1.jpg`,
+  `${import.meta.env.BASE_URL}images/cleanc2.jpg`,
+  `${import.meta.env.BASE_URL}images/cleanc3.jpg`,
 ];
+
 
 function Particles({ variant = "dust" }) {
   const items = new Array(18).fill(0);
@@ -104,11 +105,12 @@ function BottomCard({ thumbs }) {
             >
               {/* Card Image */}
               <img
-                src={src}
-                alt="preview"
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                loading="lazy"
-              />
+  src={`${import.meta.env.BASE_URL}images/${src}`} // if src is a filename string
+  alt="preview"
+  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+  loading="lazy"
+/>
+
 
               {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
@@ -190,10 +192,11 @@ export default function ImpactHeroSlider({
         <SwiperSlide>
           <section className="relative h-[100svh] w-full overflow-hidden">
             <img
-              src={cleanBg}
-              alt="Clean City"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+  src={`${import.meta.env.BASE_URL}images/cleanBg.jpg`}
+  alt="Clean City"
+  className="absolute inset-0 h-full w-full object-cover"
+/>
+
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50" />
             <Particles variant="light" />
 

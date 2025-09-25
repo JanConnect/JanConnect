@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet.heat";
+import sampleData from "./sample-heat.json";
 
 // Fix for default markers in Leaflet
 const createLeafletIcon = () => {

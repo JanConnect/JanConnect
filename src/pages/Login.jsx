@@ -15,7 +15,7 @@ export default function Login() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
-
+  
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem("accessToken");
@@ -145,10 +145,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background image with glassmorphism overlay */}
       <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/dirtybglog.jpg')" }}
-        />
+        <div
+  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+  style={{
+    backgroundImage: `url(${import.meta.env.BASE_URL}images/dirtybglog.jpg)`,
+  }}
+/>
+
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       </div>
 
@@ -339,11 +342,12 @@ export default function Login() {
         >
           <div className="group relative w-full max-w-xl cursor-pointer">
             <div className="relative h-[600px] w-full rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
-              <img 
-                src="/images/cleangb2.jpg" 
-                alt="People connecting through JanConnect" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+              <img
+  src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
+  alt="People connecting through JanConnect"
+  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+/>
+
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70" />
               
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">

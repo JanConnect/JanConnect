@@ -1,6 +1,6 @@
 // ScrollHeatmap.jsx
 import React, { useEffect, useRef, useState } from "react";
-import "./ScrollHeatmap.css";
+// import "./ScrollHeatmap.css";
 import sampleData from "./sample-heat.json";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";

@@ -395,6 +395,7 @@ const PerformanceAnalyticsModal = ({
             <div>
               <label className="block text-sm font-medium text-white/70 mb-2">View By</label>
               <select
+              style={{ color: 'white', backgroundColor: 'gray',}}
                 value={selectedFilter}
                 onChange={(e) => setSelectedFilter(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -408,6 +409,7 @@ const PerformanceAnalyticsModal = ({
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-2">Select Department</label>
                 <select
+                style={{ color: 'white', backgroundColor: 'gray',}}
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -426,6 +428,7 @@ const PerformanceAnalyticsModal = ({
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-2">Select Category</label>
                 <select
+                style={{ color: 'white', backgroundColor: 'gray',}}
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -449,7 +452,7 @@ const PerformanceAnalyticsModal = ({
                 
 <div className="h-96 w-full bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl shadow-2xl">
   <div className="flex items-center justify-between mb-4">
-    <h4 className="text-white/90 text-lg font-semibold">Monthly Progress (Dummy Data)</h4>
+    <h4 className="text-white/90 text-lg font-semibold">Monthly Progress </h4>
     <div className="text-xs text-white/50"></div>
   </div>
 
@@ -894,6 +897,7 @@ const DepartmentManagementModal = ({
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Category</label>
             <input
+            style={{ color: 'white', backgroundColor: 'gray/20',}}
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -2654,6 +2658,9 @@ useEffect(() => {
               <div className="mb-6">
                 <label className="block text-sm font-medium text-white/70 mb-2">Choose Category</label>
                 <select
+                style={{ color: 'white',
+                  backgroundColor: 'gray',
+                 }}
                   value={selectedAnalyticsCategory}
                   onChange={(e) => setSelectedAnalyticsCategory(e.target.value)}
                   className="w-full max-w-xs px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -2678,50 +2685,50 @@ useEffect(() => {
                     const maxValue = Math.max(data.pending, data.inProgress, data.resolved) || 1;
                     
                     return (
-                      <>
-                        {/* Pending */}
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">Pending</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-red-500 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.pending / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.pending}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* In Progress */}
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">In Progress</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-orange-500 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.inProgress / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.inProgress}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Resolved */}
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">Resolved</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-green-500 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.resolved / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.resolved}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    );
+  <>
+    {/* Pending */}
+    <div className="flex items-center gap-4">
+      <div className="w-20 text-sm text-white/70">Pending</div>
+      <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
+        <div 
+          className="h-full bg-red-300/70 transition-all duration-1000 ease-out"
+          style={{ width: `${(data.pending / maxValue) * 100}%` }}
+        ></div>
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
+          {data.pending}
+        </div>
+      </div>
+    </div>
+    
+    {/* In Progress */}
+    <div className="flex items-center gap-4">
+      <div className="w-20 text-sm text-white/70">In Progress</div>
+      <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
+        <div 
+          className="h-full bg-yellow-300/70 transition-all duration-1000 ease-out"
+          style={{ width: `${(data.inProgress / maxValue) * 100}%` }}
+        ></div>
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
+          {data.inProgress}
+        </div>
+      </div>
+    </div>
+    
+    {/* Resolved */}
+    <div className="flex items-center gap-4">
+      <div className="w-20 text-sm text-white/70">Resolved</div>
+      <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
+        <div 
+          className="h-full bg-green-300/70 transition-all duration-1000 ease-out"
+          style={{ width: `${(data.resolved / maxValue) * 100}%` }}
+        ></div>
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
+          {data.resolved}
+        </div>
+      </div>
+    </div>
+  </>
+);
                   })()}
                 </div>
               </div>

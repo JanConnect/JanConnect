@@ -337,6 +337,125 @@ const LocationVerification = ({ userLocation, problemLocation }) => {
   );
 };
 
+// Camera Modal Component
+const CameraModal = ({ isOpen, onClose, onCapture }) => {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [error, setError] = useState("");
+
+  const startCamera = async () => {
+    try {
+      setError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      setError("Unable to access camera. Please check permissions and try again.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `camera-photo-${Date.now()}.jpg`, { 
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          onCapture(file);
+          stopCamera();
+          onClose();
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+
+    return () => {
+      stopCamera();
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div 
+        className="fixed inset-0 bg-black/90 backdrop-blur-sm" 
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="bg-black rounded-2xl overflow-hidden shadow-2xl">
+          <div className="p-4 bg-gray-900 flex justify-between items-center">
+            <h3 className="text-white font-semibold">Take Photo</h3>
+            <button 
+              onClick={onClose}
+              className="text-white hover:bg-white/10 p-1 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="relative">
+            <video 
+              ref={videoRef}
+              autoPlay 
+              playsInline
+              className="w-full h-96 object-cover"
+            />
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="text-white text-center p-4">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p>{error}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-6 bg-gray-900 flex justify-center">
+            <button
+              onClick={capturePhoto}
+              disabled={!!error}
+              className="bg-white text-black rounded-full p-4 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Camera className="h-8 w-8" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function RaiseComplaint() {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -364,7 +483,10 @@ export default function RaiseComplaint() {
   const [userCurrentLocation, setUserCurrentLocation] = useState(null);
   const [smartVerification, setSmartVerification] = useState(null);
   
-  // **NEW: Voice message states (Added to existing speech-to-text)**
+  // **NEW: Camera modal state**
+  const [showCamera, setShowCamera] = useState(false);
+  
+  // **Voice message states**
   const [voiceBlob, setVoiceBlob] = useState(null);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [voiceRecordingTime, setVoiceRecordingTime] = useState(0);
@@ -393,7 +515,41 @@ export default function RaiseComplaint() {
 
   const acRef = useRef(null);
 
-  // **NEW: Voice Recording Functions**
+  // **NEW: Camera capture handler**
+  const handleCameraCapture = (file) => {
+    if (file) {
+      setFormData(prev => ({ ...prev, media: file }));
+      setError("");
+
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  // **NEW: Enhanced file change handler with camera option**
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 50 * 1024 * 1024) {
+        setError("File size must be less than 50MB");
+        return;
+      }
+
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setError("Only images (JPEG, PNG, WebP) are allowed");
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, media: file }));
+      setError("");
+
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  // **Voice Recording Functions**
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -667,29 +823,6 @@ export default function RaiseComplaint() {
     }
   };
 
-  // Enhanced file change handler (existing)
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size must be less than 50MB");
-        return;
-      }
-
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        setError("Only images (JPEG, PNG, WebP) are allowed");
-        return;
-      }
-
-      setFormData(prev => ({ ...prev, media: file }));
-      setError("");
-
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
-
   // Handle smart verification complete (existing)
   const handleSmartVerificationComplete = (result) => {
     setSmartVerification(result);
@@ -727,9 +860,6 @@ export default function RaiseComplaint() {
       }, 100);
     }
   };
-
-  // All other existing functions (Google Maps, location, etc.) remain the same...
-  // [Rest of the existing code remains unchanged]
 
   // Auto-get current location on mount
   useEffect(() => {
@@ -1118,6 +1248,13 @@ export default function RaiseComplaint() {
         </AnimatePresence>
       </CustomModal>
 
+      {/* Camera Modal */}
+      <CameraModal 
+        isOpen={showCamera} 
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCameraCapture}
+      />
+
       <div className="flex-1 flex items-center justify-center p-4 relative z-10 mt-16">
         <motion.div className="w-full max-w-2xl bg-white/10 backdrop-blur-xl rounded-2xl shadow-lg p-6 md:p-8 border border-white/20" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -1285,9 +1422,6 @@ export default function RaiseComplaint() {
 
             </div>
 
-            {/* Rest of the form remains exactly the same... */}
-            {/* Location, Maps, Urgency, File Upload, Submit Button - All unchanged */}
-
             {/* Location */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">Problem Location *</label>
@@ -1373,7 +1507,7 @@ export default function RaiseComplaint() {
               </div>
             </div>
 
-            {/* File Upload with Smart Verification */}
+            {/* **UPDATED: File Upload with Camera Option and Smart Verification */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
                 Add Photo (Optional - Automatic verification required) *
@@ -1395,14 +1529,34 @@ export default function RaiseComplaint() {
                   />
                 </div>
               )}
-              <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl bg-white/5 hover:bg-white/10 transition-colors duration-200 cursor-pointer">
-                <div className="text-center">
-                  <Upload className="h-8 w-8 text-white/60 mx-auto mb-2" />
-                  <p className="text-white/60 text-sm">Click to upload current issue photo</p>
-                  <p className="text-white/40 text-xs">Max 50MB • JPEG, PNG, WebP only • Must pass verification</p>
-                </div>
-                <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} />
-              </label>
+              
+              {/* **UPDATED: Upload options with camera */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* File Upload */}
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl bg-white/5 hover:bg-white/10 transition-colors duration-200 cursor-pointer">
+                  <div className="text-center">
+                    <Upload className="h-6 w-6 text-white/60 mx-auto mb-2" />
+                    <p className="text-white/60 text-sm">Choose from files</p>
+                    <p className="text-white/40 text-xs">JPEG, PNG, WebP</p>
+                  </div>
+                  <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} />
+                </label>
+                
+                {/* Camera Option */}
+                <button
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl bg-white/5 hover:bg-white/10 transition-colors duration-200"
+                >
+                  <Camera className="h-6 w-6 text-white/60 mb-2" />
+                  <p className="text-white/60 text-sm">Take photo</p>
+                  <p className="text-white/40 text-xs">Use camera</p>
+                </button>
+              </div>
+              
+              <p className="text-white/40 text-xs mt-2 text-center">
+                Max 50MB • Must pass verification • Fresh photos recommended
+              </p>
             </div>
 
             {/* Submit Button */}

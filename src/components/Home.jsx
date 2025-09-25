@@ -158,7 +158,7 @@ export default function ImpactHeroSlider({
         <SwiperSlide>
           <section className="relative h-[100svh] w-full overflow-hidden">
             <img
-  src={`${import.meta.env.BASE_URL}images/dirtyBg.jpg`}
+  src={`${import.meta.env.BASE_URL}images/dirtybg.jpg`}
   alt="Unclean City"
   className="absolute inset-0 h-full w-full object-cover"
 />

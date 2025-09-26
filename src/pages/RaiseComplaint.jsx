@@ -507,19 +507,14 @@ export default function RaiseComplaint() {
 
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
-  // ✅ Move this to the top of your file (outside the component)
 const GOOGLE_MAPS_LIBRARIES = ['places'];
 
-// Inside your component:
 const { isLoaded } = useJsApiLoader({
   googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  libraries: GOOGLE_MAPS_LIBRARIES, // ✅ Use constant
+  libraries: GOOGLE_MAPS_LIBRARIES, 
   id: 'maps-script-places'
 });
-
   const acRef = useRef(null);
-
-  // **NEW: Camera capture handler**
   const handleCameraCapture = (file) => {
     if (file) {
       setFormData(prev => ({ ...prev, media: file }));
@@ -530,7 +525,6 @@ const { isLoaded } = useJsApiLoader({
     }
   };
 
-  // **NEW: Enhanced file change handler with camera option**
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -538,13 +532,11 @@ const { isLoaded } = useJsApiLoader({
         setError("File size must be less than 50MB");
         return;
       }
-
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         setError("Only images (JPEG, PNG, WebP) are allowed");
         return;
       }
-
       setFormData(prev => ({ ...prev, media: file }));
       setError("");
 
@@ -760,8 +752,7 @@ const { isLoaded } = useJsApiLoader({
       submitFormData.append('category', formData.category);
       submitFormData.append('urgency', formData.urgency);
       
-      // **NEW: Only add description if no voice message**
-      if (hasDescription && !hasVoiceMessage) {
+      if (hasDescription) {
         submitFormData.append('description', formData.description);
       }
       

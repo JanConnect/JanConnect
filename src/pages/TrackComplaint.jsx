@@ -60,6 +60,70 @@ export default function TrackComplaint() {
   // Image modal state
   const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', title: '' });
 
+  // In your TrackComplaint component - Add debug logging
+useEffect(() => {
+    const fetchUserComplaints = async () => {
+        setLoading(true);
+        setError("");
+        
+        try {
+            // Debug token
+            const token = localStorage.getItem('accessToken');
+            console.log('🔐 Frontend Token:', token ? `Present (length: ${token.length})` : 'Missing');
+            
+            if (!token) {
+                throw new Error('NO_TOKEN');
+            }
+
+            // Test if token is valid JWT format
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    throw new Error('Invalid token format');
+                }
+                console.log('✅ Token format valid');
+            } catch (tokenError) {
+                console.error('❌ Invalid token format:', tokenError);
+                localStorage.removeItem('accessToken');
+                throw new Error('INVALID_TOKEN_FORMAT');
+            }
+
+            const response = await getUserReports({ page: 1, limit: 50 });
+            console.log('📊 API Response:', response);
+            
+            if (response.data && response.data.success) {
+                const complaintsData = response.data.data?.reports || [];
+                setComplaints(complaintsData);
+                setFilteredComplaints(complaintsData);
+                console.log(`✅ Loaded ${complaintsData.length} complaints`);
+            } else {
+                throw new Error('INVALID_RESPONSE_FORMAT');
+            }
+        } catch (err) {
+            console.error('💥 Detailed error:', {
+                message: err.message,
+                status: err.response?.status,
+                data: err.response?.data
+            });
+            
+            if (err.response?.status === 401) {
+                setError("Session expired. Please login again.");
+                localStorage.removeItem('accessToken');
+                setTimeout(() => navigate('/login'), 2000);
+            } else if (err.message === 'NO_TOKEN') {
+                setError("Please login to view your complaints.");
+                navigate('/login');
+            } else {
+                setError(err.response?.data?.message || "Failed to load complaints");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchUserComplaints();
+}, [userId, navigate, t]);
+
   useEffect(() => {
     const fetchUserComplaints = async () => {
       setLoading(true);

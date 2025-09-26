@@ -105,14 +105,12 @@ function BottomCard({ thumbs }) {
             >
               {/* Card Image */}
               <img
-  src={`${import.meta.env.BASE_URL}images/${src}`} // if src is a filename string
-  alt="preview"
-  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-  loading="lazy"
-/>
+                src={src}
+                alt="preview"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                loading="lazy"
+              />
 
-
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
             </motion.div>
           ))}
@@ -146,7 +144,7 @@ export default function ImpactHeroSlider({
   return (
     <div className="relative h-[100svh] w-full">
       <style>{paginationStyles}</style>
-      
+
       <Swiper
         modules={[Pagination, EffectFade, Autoplay, Parallax]}
         pagination={{ clickable: true, el: ".swiper-pagination" }}
@@ -160,10 +158,10 @@ export default function ImpactHeroSlider({
         <SwiperSlide>
           <section className="relative h-[100svh] w-full overflow-hidden">
             <img
-  src={`${import.meta.env.BASE_URL}images/dirtybg.jpg`}
-  alt="Unclean City"
-  className="absolute inset-0 h-full w-full object-cover"
-/>
+              src={`${import.meta.env.BASE_URL}images/dirtybg.jpg`}
+              alt="Unclean City"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
 
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
             <Particles variant="dust" />
@@ -192,10 +190,10 @@ export default function ImpactHeroSlider({
         <SwiperSlide>
           <section className="relative h-[100svh] w-full overflow-hidden">
             <img
-  src={`${import.meta.env.BASE_URL}images/cleanBg.jpg`}
-  alt="Clean City"
-  className="absolute inset-0 h-full w-full object-cover"
-/>
+              src={`${import.meta.env.BASE_URL}images/cleanbg.jpg`}
+              alt="Clean City"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
 
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50" />
             <Particles variant="light" />

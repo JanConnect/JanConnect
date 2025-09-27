@@ -445,16 +445,6 @@ export default function Login() {
                 <p className="text-xl text-white/90 font-medium">
                   #JanConnect
                 </p>
-                
-                {/* Demo credentials note */}
-                <div className="mt-6 bg-black/30 backdrop-blur-sm rounded-lg p-4 max-w-md">
-                  <p className="text-yellow-200 text-sm mb-1">
-                    <strong>Demo Access Available</strong>
-                  </p>
-                  <p className="text-white/80 text-xs">
-                    Use the provided demo credentials to explore all features without registration.
-                  </p>
-                </div>
               </div>
 
               <div className="absolute inset-0 rounded-3xl border border-white/10 group-hover:border-white/20 transition-all duration-500" />

@@ -787,7 +787,7 @@ useEffect(() => {
       <div className="flex-1 flex flex-col lg:flex-row mt-20 p-4 relative z-10 gap-6">
         {/* Left Section - Globe */}
         <div className="w-full lg:w-1/2 h-96 lg:h-auto">
-          {/* <Globe3D complaints={sortedComplaints.slice(0, 6)} /> */}
+          <Globe3D complaints={sortedComplaints.slice(0, 6)} />
         </div>
 
         {/* Right Section - Trending Complaints */}
@@ -817,7 +817,7 @@ useEffect(() => {
           JanConnect — Scroll Heatmap demo
         </header>
         <main>
-          {/* <ScrollHeatmap /> */}
+          <ScrollHeatmap />
         </main>
       </div>
 

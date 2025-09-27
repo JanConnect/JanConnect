@@ -217,16 +217,18 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
       {/* Chatbot Button */}
       {!isOpen && (
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
+          className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
           aria-label={t('chatbot.openButton', 'Open chat')}
         >
           <svg 
-            className="w-7 h-7 text-white" 
+            className="w-6 h-6 sm:w-7 sm:h-7 text-white" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24" 
@@ -239,26 +241,36 @@ const Chatbot = () => {
               d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
             ></path>
           </svg>
-          <span className="absolute -top-1 -right-1 flex h-5 w-5">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 sm:h-5 sm:w-5 bg-green-500"></span>
           </span>
-        </button>
+        </motion.button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-96 h-[520px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-xl flex flex-col border border-gray-700 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="w-[calc(100vw-2rem)] sm:w-96 h-[80vh] sm:h-[520px] max-h-[600px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-xl flex flex-col border border-gray-700 overflow-hidden"
+          style={{
+            maxWidth: 'calc(100vw - 2rem)',
+            margin: '0 auto'
+          }}
+        >
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 sm:p-4 rounded-t-2xl flex justify-between items-center">
             <div className="flex items-center">
-              <div className="bg-white/20 p-2 rounded-xl mr-3">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <div className="bg-white/20 p-1.5 sm:p-2 rounded-xl mr-2 sm:mr-3">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-lg">{t('chatbot.title', 'JanBot Assistant')}</h3>
+                <h3 className="font-semibold text-base sm:text-lg">{t('chatbot.title', 'JanBot Assistant')}</h3>
                 <p className="text-xs opacity-80">{t('chatbot.subtitle', 'Here to help with civic issues')}</p>
               </div>
             </div>
@@ -267,21 +279,21 @@ const Chatbot = () => {
               className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
               aria-label={t('chatbot.closeButton', 'Close chat')}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
           </div>
 
           {/* Messages Container */}
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-800/30">
+          <div className="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-800/30">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex mb-3 sm:mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs p-4 rounded-2xl ${
+                  className={`max-w-[85%] sm:max-w-xs p-3 sm:p-4 rounded-2xl text-sm sm:text-base ${
                     message.sender === 'user'
                       ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
                       : 'bg-gray-700 text-gray-100 border border-gray-600'
@@ -295,36 +307,37 @@ const Chatbot = () => {
           </div>
 
           {/* Quick Suggestions */}
-          <div className="px-4 py-3 bg-gray-700 border-t border-gray-600">
+          <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-700 border-t border-gray-600">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-400">{t('chatbot.quickQuestions', 'Quick questions:')}</p>
+              <p className="text-xs sm:text-sm text-gray-400">{t('chatbot.quickQuestions', 'Quick questions:')}</p>
               <button 
                 onClick={() => setShowMoreQuestions(!showMoreQuestions)}
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center"
+                className="text-xs sm:text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center"
               >
                 {showMoreQuestions ? (
                   <>
                     <span>{t('chatbot.showLess', 'Show less')}</span>
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
                     </svg>
                   </>
                 ) : (
                   <>
                     <span>{t('chatbot.showMore', 'Show more')}</span>
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                   </>
                 )}
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {visibleSuggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="px-3 py-2 text-sm bg-gray-600 border border-gray-500 rounded-xl hover:bg-gray-500 transition-colors text-gray-200"
+                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-gray-600 border border-gray-500 rounded-xl hover:bg-gray-500 transition-colors text-gray-200 break-words max-w-[48%] sm:max-w-none"
+                  style={{ wordBreak: 'break-word' }}
                 >
                   {suggestion}
                 </button>
@@ -333,7 +346,7 @@ const Chatbot = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-gray-700 border-t border-gray-600 rounded-b-2xl">
+          <div className="p-3 sm:p-4 bg-gray-700 border-t border-gray-600 rounded-b-2xl">
             <div className="flex items-center">
               <input
                 type="text"
@@ -341,21 +354,21 @@ const Chatbot = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={t('chatbot.placeholder', 'Ask JanBot about reporting issues...')}
-                className="flex-1 px-4 py-3 text-sm bg-gray-600 border border-gray-500 rounded-2xl rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder-gray-400"
+                className="flex-1 px-3 py-2 sm:px-4 sm:py-3 text-sm bg-gray-600 border border-gray-500 rounded-2xl rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder-gray-400"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={inputValue.trim() === ''}
-                className="px-4 py-3 text-white bg-indigo-600 rounded-2xl rounded-l-none hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 sm:px-4 sm:py-3 text-white bg-indigo-600 rounded-2xl rounded-l-none hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 aria-label={t('chatbot.sendButton', 'Send message')}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                 </svg>
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

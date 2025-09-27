@@ -543,109 +543,88 @@ useEffect(() => {
       </motion.header>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-white/20 backdrop-blur-lg md:hidden overflow-hidden"
-          >
-            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-              {/* Language Selector in Mobile Menu */}
-              <div className="relative">
-                <select
-                  value={i18n.language}
-                  onChange={(e) => changeLanguage(e.target.value)}
-                  className="w-full p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 shadow-sm"
-                >
-                  {languages.map((language) => (
-                    <option key={language.code} value={language.code}>
-                      {language.flag} {language.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* State Dropdown in Mobile Menu */}
-              <div className="relative">
-                <select
-                  value={selectedState}
-                  onChange={(e) => {
-                    setSelectedState(e.target.value);
-                    setSelectedAuthority("");
-                  }}
-                  className="w-full p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 shadow-sm"
-                >
-                  <option value="">{t("selectState")}</option>
-                  {states.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Authority Dropdown in Mobile Menu */}
-              <div className="relative">
-                <select
-                  value={selectedAuthority}
-                  onChange={(e) => setSelectedAuthority(e.target.value)}
-                  disabled={!selectedState}
-                  className="w-full p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">{t("selectAuthority")}</option>
-                  {selectedState &&
-                    authorities[selectedState.replace(/\s+/g, "")]?.map(
-                      (auth) => (
-                        <option key={auth} value={auth}>
-                          {auth}
-                        </option>
-                      )
-                    )}
-                </select>
-              </div>
-
-              {/* Profile Info in Mobile Menu */}
-              <div className="p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
-                <p className="text-white font-medium">{user.name}</p>
-                <p className="text-white/60 text-sm">{user.email}</p>
-              </div>
-
-              {/* Logout Button in Mobile Menu */}
-              <motion.button
-                className="flex items-center justify-center space-x-1 px-4 py-2 rounded-xl border border-white text-white bg-transparent hover:bg-white/10 transition-all duration-300"
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4" />
-                <span>{t("logout")}</span>
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Welcome Section with Lion */}
-      <div className="relative w-full max-w-6xl mx-auto h-[28rem] md:h-[22rem] ">
-        {/* Lion Component as background */}
-        <div className="absolute top-0 right-80 bottom-0 z-0 w-[60%] md:w-[50%]">
-          <LionComponent />
+<AnimatePresence>
+  {mobileMenuOpen && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed top-16 left-0 right-0 z-40 bg-white/20 backdrop-blur-lg md:hidden overflow-hidden"
+    >
+      <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+        {/* District Display in Mobile Menu */}
+        <div className="p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
+          <div className="flex items-center space-x-2">
+            <MapPin className="h-4 w-4 text-white/70" />
+            <span className="text-white/80 text-sm">Current Location:</span>
+          </div>
+          <p className="text-white font-medium mt-1">
+            {district || t("detectingDistrict")}
+          </p>
+          {state && (
+            <p className="text-white/60 text-xs mt-1">{state}</p>
+          )}
         </div>
 
-        {/* Welcome Text overlay */}
-        <motion.div
-          className={`absolute top-1/3 md:left-0 transition-all duration-700 delay-400 ease-out whitespace-nowrap ${
-            isLoaded ? "opacity-100" : "opacity-0"
-          }`}
+        {/* Language Selector in Mobile Menu */}
+        <div className="relative">
+          <select
+            value={i18n.language}
+            onChange={(e) => changeLanguage(e.target.value)}
+            className="w-full p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 shadow-sm"
+          >
+            {languages.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.flag} {language.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Profile Info in Mobile Menu */}
+        <div className="p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
+          <p className="text-white font-medium">{user.name}</p>
+          <p className="text-white/60 text-sm">{user.email}</p>
+        </div>
+
+        {/* Logout Button in Mobile Menu */}
+        <motion.button
+          className="flex items-center justify-center space-x-1 px-4 py-2 rounded-xl border border-white text-white bg-transparent hover:bg-white/10 transition-all duration-300"
+          whileTap={{ scale: 0.95 }}
+          onClick={handleLogout}
         >
-          <h1 className="text-[5vw] md:text-[4vw] font-bold text-white">
-            {t("welcomeMessage", { name: user.name })}
-          </h1>
-          <p className="text-white/70 text-lg">{t("welcomeSubtitle")}</p>
-        </motion.div>
+          <LogOut className="h-4 w-4" />
+          <span>{t("logout")}</span>
+        </motion.button>
       </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+      {/* Welcome Section */}
+<div className="relative w-full max-w-6xl mx-auto 
+     h-auto md:h-[22rem] flex items-center justify-center md:block">
+
+  {/* Lion Component - only on desktop */}
+  <div className="absolute top-0 right-80 bottom-0 z-0 w-[50%] hidden md:block">
+    <LionComponent />
+  </div>
+
+  {/* Welcome Text */}
+  <motion.div
+    className={`transition-all duration-700 delay-400 ease-out whitespace-nowrap ${
+      isLoaded ? "opacity-100" : "opacity-0"
+    }`}
+  >
+    <h1 className="text-[6vw] md:text-[4vw] font-bold text-white text-center md:text-left pt-30">
+      {t("welcomeMessage", { name: user.name })}
+    </h1>
+    <p className="hidden md:block text-white/70 text-base md:text-lg text-center md:text-left">
+      {t("welcomeSubtitle")}
+    </p>
+  </motion.div>
+</div>
+
 
       {/* Three Interactive Cards */}
       <div className="flex-1 flex items-center justify-center p-4 relative z-10 mt-8">
@@ -786,7 +765,7 @@ useEffect(() => {
       {/* Main Content Area - Globe on left, Trending complaints on right */}
       <div className="flex-1 flex flex-col lg:flex-row mt-20 p-4 relative z-10 gap-6">
         {/* Left Section - Globe */}
-        <div className="w-full lg:w-1/2 h-96 lg:h-auto">
+        <div className="w-full lg:w-1/2 h-96 lg:h-auto hidden md:block">
           <Globe3D complaints={sortedComplaints.slice(0, 6)} />
         </div>
 

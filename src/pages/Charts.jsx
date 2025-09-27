@@ -142,16 +142,18 @@ export const DepartmentPerformanceChart = ({ data }) => {
           vertical={false}
         />
         <XAxis
-          dataKey="department"
-          textAnchor="end"
-          height={60}
-          tick={{
-            fill: "rgba(255,255,255,0.8)",
-            fontSize: 12,
-            fontWeight: 500,
-          }}
-          interval={0}
-        />
+  dataKey="department"
+  textAnchor="end"
+  height={60}
+  tick={{
+    fill: "rgba(255,255,255,0.8)",
+    fontSize: window.innerWidth < 640 ? 8 : 12,   // smaller font on mobile
+    fontWeight: 500,
+    angle: window.innerWidth < 640 ? -45 : 0,     // rotate labels on mobile
+  }}
+  interval={0}
+/>
+
         <YAxis
           tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
           label={{
@@ -242,50 +244,55 @@ export const AnalyticsChartsSection = ({
 
   return (
     <div className="w-full p-4 mt-8 relative z-10">
-      <div className=" backdrop-blur-md rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            {t("performanceAnalytics")}
-          </h2>
-          <div className="flex space-x-2 bg-white/10 backdrop-blur-sm rounded-xl p-1">
-            <button
-              onClick={() => setActiveChartTab("department")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center ${
-                activeChartTab === "department"
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "bg-transparent text-white/70 hover:bg-white/10"
-              }`}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              {t("departmentPerformance")}
-            </button>
-            <button
-              onClick={() => setActiveChartTab("reports")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center ${
-                activeChartTab === "reports"
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "bg-transparent text-white/70 hover:bg-white/10"
-              }`}
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              {t("reportsTimeline")}
-            </button>
-          </div>
-        </div>
-
-        <div className="h-80">
-          {activeChartTab === "department" ? (
-            <DepartmentPerformanceChart data={departmentPerformanceData} />
-          ) : (
-            <ReportsTimelineChart data={reportsOverTimeData} />
-          )}
-        </div>
-      </div>
-      <div className="w-full flex justify-center items-center text-center mt-6">
-        <h1 className="text-[5vw] md:text-[3vw] font-bold text-white">
-          {t("liveComplaintsHeatmap")}
-        </h1>
+  <div className="backdrop-blur-md rounded-2xl p-4 sm:p-6">
+    {/* Header */}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+      <h2 className="text-xl sm:text-2xl font-bold text-white">
+        {t("performanceAnalytics")}
+      </h2>
+      <div className="flex flex-wrap sm:flex-nowrap space-x-0 sm:space-x-2 space-y-2 sm:space-y-0 bg-white/10 backdrop-blur-sm rounded-xl p-1 w-full sm:w-auto">
+        <button
+          onClick={() => setActiveChartTab("department")}
+          className={`flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center ${
+            activeChartTab === "department"
+              ? "bg-indigo-600 text-white shadow-lg"
+              : "bg-transparent text-white/70 hover:bg-white/10"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
+          {t("departmentPerformance")}
+        </button>
+        <button
+          onClick={() => setActiveChartTab("reports")}
+          className={`flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center ${
+            activeChartTab === "reports"
+              ? "bg-indigo-600 text-white shadow-lg"
+              : "bg-transparent text-white/70 hover:bg-white/10"
+          }`}
+        >
+          <TrendingUp className="h-4 w-4 mr-1 sm:mr-2" />
+          {t("reportsTimeline")}
+        </button>
       </div>
     </div>
+
+    {/* Chart */}
+    <div className="h-[50vh] sm:h-[60vh] md:h-80">
+      {activeChartTab === "department" ? (
+        <DepartmentPerformanceChart data={departmentPerformanceData} />
+      ) : (
+        <ReportsTimelineChart data={reportsOverTimeData} />
+      )}
+    </div>
+  </div>
+
+  {/* Title Below */}
+  <div className="w-full flex justify-center items-center text-center mt-6">
+    <h1 className="text-[6vw] md:text-[3vw] font-bold text-white">
+      {t("liveComplaintsHeatmap")}
+    </h1>
+  </div>
+</div>
+
   );
 };

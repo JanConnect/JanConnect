@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle, Copy, Check } from "lucide-react";
 import { login as authLogin } from "../store/authSlice";
 import { loginUser, getCurrentUser } from "../api";
 
@@ -15,6 +15,8 @@ export default function Login() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
+  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
+  const [copiedField, setCopiedField] = useState("");
   
   useEffect(() => {
     // Check if user is already logged in
@@ -45,6 +47,22 @@ export default function Login() {
     if (error) setError("");
     if (success) setSuccess("");
     setForm((f) => ({ ...f, [k]: v }));
+  };
+
+  // Function to auto-fill demo credentials
+  const fillDemoCredentials = () => {
+    setForm({
+      email: "deeptisharma@gmail.com",
+      password: "deepti@3410"
+    });
+    setShowDemoCredentials(false);
+  };
+
+  // Function to copy credentials to clipboard
+  const copyToClipboard = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(""), 2000);
   };
 
   const onSubmit = async (e) => {
@@ -92,6 +110,8 @@ export default function Login() {
         // **Update Redux store**
         dispatch(authLogin({ userData }));
         
+        // **Show success message**
+        setSuccess("Login successful! Redirecting...");
         
         // **Navigate after a short delay**
         setTimeout(() => {
@@ -103,9 +123,7 @@ export default function Login() {
         setSubmitting(false);
       }
     } catch (err) {
-      console.error("Login error:", err); // Debug log
-      
-      // **Ensure submitting is set to false**
+      console.error("Login error:", err); 
       setSubmitting(false);
       
       // **Handle different error scenarios WITHOUT causing refresh**
@@ -146,11 +164,11 @@ export default function Login() {
       {/* Background image with glassmorphism overlay */}
       <div className="absolute inset-0 z-0">
         <div
-  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-  style={{
-    backgroundImage: `url(${import.meta.env.BASE_URL}images/dirtybglog.jpg)`,
-  }}
-/>
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${import.meta.env.BASE_URL}images/dirtybglog.jpg)`,
+          }}
+        />
 
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       </div>
@@ -175,6 +193,73 @@ export default function Login() {
             <h2 className="text-5xl lg:text-6xl font-bold text-white bg-clip-text">
               JanConnect
             </h2>
+          </motion.div>
+
+          {/* Demo Credentials Box */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="mb-6"
+          >
+            <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-xl p-4 backdrop-blur-md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-yellow-200 font-semibold text-sm flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Demo Credentials for Testing
+                </h3>
+                <button
+                  onClick={() => setShowDemoCredentials(!showDemoCredentials)}
+                  className="text-yellow-200 hover:text-white transition-colors text-sm"
+                >
+                  {showDemoCredentials ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              
+              {showDemoCredentials && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-yellow-400/10 rounded-lg px-3 py-2">
+                    <div>
+                      <span className="text-yellow-100 text-sm font-medium">Email:</span>
+                      <span className="text-yellow-200 font-mono text-sm ml-2">deeptisharma@gmail.com</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard("deeptisharma@gmail.com", "email")}
+                      className="text-yellow-200 hover:text-white transition-colors p-1 rounded"
+                    >
+                      {copiedField === "email" ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  
+                  <div className="flex justify-between items-center bg-yellow-400/10 rounded-lg px-3 py-2">
+                    <div>
+                      <span className="text-yellow-100 text-sm font-medium">Password:</span>
+                      <span className="text-yellow-200 font-mono text-sm ml-2">deepti@3410</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard("deepti@3410", "password")}
+                      className="text-yellow-200 hover:text-white transition-colors p-1 rounded"
+                    >
+                      {copiedField === "password" ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  
+                  <button
+                    onClick={fillDemoCredentials}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                  >
+                    <Copy size={16} className="mr-2" />
+                    Auto-fill Demo Credentials
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-yellow-200/80 text-xs mt-2">
+                💡 <strong>Note for Evaluators:</strong> Use these credentials to test the application without creating a new account.
+              </p>
+            </div>
           </motion.div>
 
           {/* **Fixed form with proper event handling** */}
@@ -343,10 +428,10 @@ export default function Login() {
           <div className="group relative w-full max-w-xl cursor-pointer">
             <div className="relative h-[600px] w-full rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
               <img
-  src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
-  alt="People connecting through JanConnect"
-  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-/>
+                src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
+                alt="People connecting through JanConnect"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
 
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70" />
               
@@ -360,6 +445,16 @@ export default function Login() {
                 <p className="text-xl text-white/90 font-medium">
                   #JanConnect
                 </p>
+                
+                {/* Demo credentials note */}
+                <div className="mt-6 bg-black/30 backdrop-blur-sm rounded-lg p-4 max-w-md">
+                  <p className="text-yellow-200 text-sm mb-1">
+                    <strong>Demo Access Available</strong>
+                  </p>
+                  <p className="text-white/80 text-xs">
+                    Use the provided demo credentials to explore all features without registration.
+                  </p>
+                </div>
               </div>
 
               <div className="absolute inset-0 rounded-3xl border border-white/10 group-hover:border-white/20 transition-all duration-500" />

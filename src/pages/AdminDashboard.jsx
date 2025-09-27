@@ -198,16 +198,16 @@ const generateFallbackComplaintData = () => {
 // Generate dummy staff data
 const generateDummyStaffData = () => {
   return [
-    { _id: 'staff_1', name: 'John Smith', email: 'john.smith@municipality.gov', role: 'Engineer' },
-    { _id: 'staff_2', name: 'Jane Doe', email: 'jane.doe@municipality.gov', role: 'Sanitation Specialist' },
-    { _id: 'staff_3', name: 'Robert Johnson', email: 'robert.j@municipality.gov', role: 'Electrician' },
-    { _id: 'staff_4', name: 'Sarah Williams', email: 'sarah.w@municipality.gov', role: 'Water Technician' },
-    { _id: 'staff_5', name: 'Michael Brown', email: 'michael.b@municipality.gov', role: 'Traffic Controller' },
-    { _id: 'staff_6', name: 'Emily Davis', email: 'emily.d@municipality.gov', role: 'Park Maintenance' },
-    { _id: 'staff_7', name: 'David Wilson', email: 'david.w@municipality.gov', role: 'General Maintenance' },
-    { _id: 'staff_8', name: 'Lisa Anderson', email: 'lisa.a@municipality.gov', role: 'Coordinator' },
-    { _id: 'staff_9', name: 'James Taylor', email: 'james.t@municipality.gov', role: 'Inspector' },
-    { _id: 'staff_10', name: 'Jessica Martinez', email: 'jessica.m@municipality.gov', role: 'Administrator' }
+    { _id: 'staff_1', name: 'Amit Sharma', email: 'amit.sharma@municipality.in', role: 'Engineer' },
+    { _id: 'staff_2', name: 'Priya Verma', email: 'priya.verma@municipality.in', role: 'Sanitation Specialist' },
+    { _id: 'staff_3', name: 'Rahul Nair', email: 'rahul.nair@municipality.in', role: 'Electrician' },
+    { _id: 'staff_4', name: 'Sneha Iyer', email: 'sneha.iyer@municipality.in', role: 'Water Technician' },
+    { _id: 'staff_5', name: 'Vikram Singh', email: 'vikram.singh@municipality.in', role: 'Traffic Controller' },
+    { _id: 'staff_6', name: 'Neha Patel', email: 'neha.patel@municipality.in', role: 'Park Maintenance' },
+    { _id: 'staff_7', name: 'Arjun Reddy', email: 'arjun.reddy@municipality.in', role: 'General Maintenance' },
+    { _id: 'staff_8', name: 'Kavya Joshi', email: 'kavya.joshi@municipality.in', role: 'Coordinator' },
+    { _id: 'staff_9', name: 'Suresh Kumar', email: 'suresh.kumar@municipality.in', role: 'Inspector' },
+    { _id: 'staff_10', name: 'Ananya Gupta', email: 'ananya.gupta@municipality.in', role: 'Administrator' }
   ];
 };
 

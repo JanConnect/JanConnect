@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { adminLogin } from "../api/admin";  // Add this import
+import { adminLogin } from "../api/admin";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -8,12 +8,12 @@ export default function AdminLogin() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
 
   useEffect(() => {
     // Check if admin is already logged in
     const token = localStorage.getItem('accessToken');
     if (token) {
-      // Verify if user is admin by checking token
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         if (payload.role === 'admin') {
@@ -21,12 +21,10 @@ export default function AdminLogin() {
           return;
         }
       } catch (error) {
-        // Invalid token, continue with login
         localStorage.removeItem('accessToken');
       }
     }
 
-    // Trigger the animation after a tiny delay
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 50);
@@ -35,6 +33,15 @@ export default function AdminLogin() {
   }, [navigate]);
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Function to auto-fill demo credentials
+  const fillDemoCredentials = () => {
+    setForm({
+      email: "someone@gmail.com",
+      password: "123456"
+    });
+    setShowDemoCredentials(false);
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -45,10 +52,7 @@ export default function AdminLogin() {
       const response = await adminLogin(form);
       const { user, admin, accessToken } = response.data.data;
       
-      // Store token in localStorage (optional, since you're using cookies)
       localStorage.setItem('accessToken', accessToken);
-      
-      // Store admin info for frontend use
       localStorage.setItem('adminInfo', JSON.stringify({
         user,
         admin,
@@ -61,7 +65,6 @@ export default function AdminLogin() {
     } catch (error) {
       console.error("Admin login failed:", error);
       
-      // Handle specific error messages
       if (error.response?.status === 404) {
         setError("Admin account not found. Please contact your system administrator.");
       } else if (error.response?.status === 401) {
@@ -76,16 +79,14 @@ export default function AdminLogin() {
     }
   };
 
-  // Rest of your component remains exactly the same
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background image with glassmorphism overlay */}
       <div className="absolute inset-0 z-0">
         <div
-  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-  style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/dirtybglog.jpg')` }}
-></div>
-        {/* Enhanced glassmorphism overlay */}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/dirtybglog.jpg')` }}
+        ></div>
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       </div>
 
@@ -107,6 +108,52 @@ export default function AdminLogin() {
             </h2>
           </div>
 
+          {/* Demo Credentials Box */}
+          <div className={`mb-6 transition-all duration-700 delay-250 ease-out ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
+            <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-xl p-4 backdrop-blur-md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-yellow-200 font-semibold text-sm flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Demo Admin Credentials
+                </h3>
+                <button
+                  onClick={() => setShowDemoCredentials(!showDemoCredentials)}
+                  className="text-yellow-200 hover:text-white transition-colors"
+                >
+                  {showDemoCredentials ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              
+              {showDemoCredentials && (
+                <div className="space-y-2 text-yellow-100 text-sm">
+                  <div className="flex justify-between items-center bg-yellow-400/10 rounded-lg px-3 py-2">
+                    <span className="font-medium">Email:</span>
+                    <span className="font-mono">someone@gmail.com</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-yellow-400/10 rounded-lg px-3 py-2">
+                    <span className="font-medium">Password:</span>
+                    <span className="font-mono">123456</span>
+                  </div>
+                  <button
+                    onClick={fillDemoCredentials}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200 mt-2"
+                  >
+                    Auto-fill Credentials
+                  </button>
+                </div>
+              )}
+              
+              <p className="text-yellow-200/80 text-xs mt-2">
+                📝 <strong>Note:</strong> These credentials are provided for demonstration purposes. 
+                In production, government authorities will provide official admin credentials.
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={onSubmit} className="space-y-6">
             {/* Form fields with staggered animations */}
             <div className={`transition-all duration-700 delay-300 ease-out ${
@@ -115,7 +162,7 @@ export default function AdminLogin() {
               <label className="block text-sm font-medium mb-2 opacity-90">Admin Email</label>
               <input
                 type="email"
-                placeholder="admin@example.com"
+                placeholder="someone@gmail.com"
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
                 required
@@ -197,11 +244,11 @@ export default function AdminLogin() {
         }`}>
           <div className="group relative w-full max-w-xl cursor-pointer">
             <div className="relative h-[600px] w-full rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
-             <img
-  src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
-  alt="Admin access to JanConnect"
-  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-/>
+              <img
+                src={`${import.meta.env.BASE_URL}images/cleangb2.jpg`}
+                alt="Admin access to JanConnect"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
 
               {/* Enhanced gradient overlay for better text visibility */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70"></div>
@@ -214,6 +261,7 @@ export default function AdminLogin() {
                 <p className="text-xl text-white/90 font-medium">
                   Admin Portal - JanConnect
                 </p>
+                
               </div>
 
               {/* Subtle border effect on hover */}

@@ -6,6 +6,115 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { createReport } from '../api/report';
 import { useTranslation } from "react-i18next";
 
+// Debug logging utility
+const debugLog = (message, data = null, type = 'info') => {
+  const timestamp = new Date().toISOString();
+  const env = import.meta.env.MODE || 'development';
+  const logMessage = `[${timestamp}] [${env.toUpperCase()}] [RAISE-COMPLAINT] ${message}`;
+  
+  if (data) {
+    console[type](logMessage, data);
+  } else {
+    console[type](logMessage);
+  }
+};
+
+// Enhanced API call debugger
+const debugApiCall = async (apiFunction, functionName, formData, params = {}) => {
+  debugLog(`🚀 API Call Started: ${functionName}`, {
+    functionName,
+    hasFormData: !!formData,
+    formDataKeys: formData ? Array.from(formData.keys()) : 'none',
+    params,
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    // Check token first
+    const token = localStorage.getItem('accessToken');
+    debugLog('🔐 Token Check', {
+      exists: !!token,
+      length: token?.length,
+      preview: token ? `${token.substring(0, 20)}...` : 'none'
+    });
+
+    if (!token) {
+      throw new Error('NO_TOKEN');
+    }
+
+    // Validate token format
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid JWT token format');
+      }
+      debugLog('✅ Token format valid');
+    } catch (tokenError) {
+      debugLog('❌ Invalid token format', { error: tokenError.message });
+      localStorage.removeItem('accessToken');
+      throw new Error('INVALID_TOKEN_FORMAT');
+    }
+
+    // Log form data details
+    if (formData) {
+      debugLog('📦 Form Data Analysis', {
+        totalEntries: Array.from(formData.entries()).length,
+        hasTitle: formData.has('title'),
+        hasCategory: formData.has('category'),
+        hasDescription: formData.has('description'),
+        hasVoiceMessage: formData.has('voiceMessage'),
+        hasImage: formData.has('image'),
+        hasLocation: formData.has('location[address]'),
+        voiceMessageSize: formData.get('voiceMessage')?.size || 0,
+        imageSize: formData.get('image')?.size || 0
+      });
+    }
+
+    // Make API call
+    debugLog(`📡 Making API request to ${functionName}`, {
+      baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:8000',
+      endpoint: '/api/v1/reports/create',
+      method: 'POST',
+      hasFiles: formData ? (formData.get('image') || formData.get('voiceMessage')) : false
+    });
+
+    const response = await apiFunction(formData);
+    
+    debugLog(`✅ API Response Success: ${functionName}`, {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      dataStructure: response.data ? {
+        success: response.data.success,
+        hasData: !!response.data.data,
+        hasReport: !!response.data.data?.report,
+        reportId: response.data.data?.report?.reportId
+      } : 'none'
+    });
+
+    return response;
+
+  } catch (error) {
+    debugLog(`💥 API Call Failed: ${functionName}`, {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      responseData: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+        headers: error.config?.headers ? Object.keys(error.config.headers) : 'none',
+        hasData: !!error.config?.data
+      }
+    }, 'error');
+
+    throw error;
+  }
+};
+
 // Simple Custom Modal Component
 const CustomModal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
@@ -515,7 +624,42 @@ const { isLoaded } = useJsApiLoader({
   id: 'maps-script-places'
 });
   const acRef = useRef(null);
+
+  // Enhanced debug function for form submission
+  const debugFormSubmission = (formData, voiceBlob, smartVerification) => {
+    debugLog('📋 Form Submission Analysis', {
+      formData: {
+        title: formData.title,
+        category: formData.category,
+        descriptionLength: formData.description?.length || 0,
+        urgency: formData.urgency,
+        location: formData.location.address ? 'set' : 'missing',
+        coordinates: formData.location.coordinates,
+        hasMedia: !!formData.media,
+        mediaType: formData.media?.type,
+        mediaSize: formData.media?.size
+      },
+      voiceMessage: {
+        hasVoiceBlob: !!voiceBlob,
+        voiceBlobSize: voiceBlob?.size || 0
+      },
+      verification: {
+        smartVerification: !!smartVerification,
+        canSubmit: smartVerification?.canSubmit,
+        overallScore: smartVerification?.overallScore
+      },
+      canSubmit: canSubmit()
+    });
+  };
+
   const handleCameraCapture = (file) => {
+    debugLog('📷 Camera capture completed', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      lastModified: file.lastModified
+    });
+    
     if (file) {
       setFormData(prev => ({ ...prev, media: file }));
       setError("");
@@ -527,6 +671,12 @@ const { isLoaded } = useJsApiLoader({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    debugLog('📁 File input changed', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type
+    });
+    
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
         setError("File size must be less than 50MB");
@@ -545,8 +695,9 @@ const { isLoaded } = useJsApiLoader({
     }
   };
 
-  // **Voice Recording Functions**
+  // **Voice Recording Functions with Debugging**
   const startVoiceRecording = async () => {
+    debugLog('🎤 Starting voice recording');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       voiceRecorderRef.current = new MediaRecorder(stream);
@@ -558,6 +709,10 @@ const { isLoaded } = useJsApiLoader({
 
       voiceRecorderRef.current.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
+        debugLog('🎤 Voice recording stopped', {
+          blobSize: blob.size,
+          duration: voiceRecordingTime
+        });
         setVoiceBlob(blob);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -574,17 +729,19 @@ const { isLoaded } = useJsApiLoader({
       // Auto-stop after 5 minutes
       setTimeout(() => {
         if (voiceRecorderRef.current && voiceRecorderRef.current.state === 'recording') {
+          debugLog('⏰ Auto-stopping voice recording after 5 minutes');
           stopVoiceRecording();
         }
       }, 300000);
 
     } catch (error) {
-      console.error('Voice recording error:', error);
+      debugLog('❌ Voice recording error', { error: error.message }, 'error');
       setError("Could not access microphone for voice recording");
     }
   };
 
   const stopVoiceRecording = () => {
+    debugLog('⏹️ Stopping voice recording');
     if (voiceRecorderRef.current && voiceRecorderRef.current.state === 'recording') {
       voiceRecorderRef.current.stop();
       setIsRecordingVoice(false);
@@ -595,6 +752,7 @@ const { isLoaded } = useJsApiLoader({
   };
 
   const removeVoiceRecording = () => {
+    debugLog('🗑️ Removing voice recording');
     setVoiceBlob(null);
     setVoiceRecordingTime(0);
   };
@@ -625,7 +783,7 @@ const { isLoaded } = useJsApiLoader({
       };
 
       recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
+        debugLog('❌ Speech recognition error', { error: event.error }, 'error');
         setSpeechError(`Speech recognition error: ${event.error}`);
         setIsListening(false);
       };
@@ -648,6 +806,7 @@ const { isLoaded } = useJsApiLoader({
 
   // Toggle speech recognition (existing)
   const toggleListening = () => {
+    debugLog('🎙️ Toggling speech recognition', { currentlyListening: isListening });
     if (isListening) {
       setIsListening(false);
       if (recognitionRef.current) {
@@ -676,24 +835,35 @@ const { isLoaded } = useJsApiLoader({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
+          debugLog('📍 User location obtained', { location });
           setUserCurrentLocation(location);
           resolve(location);
         },
-        (error) => reject(error),
+        (error) => {
+          debugLog('❌ Geolocation error', { error: error.message }, 'error');
+          reject(error);
+        },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     });
   };
 
-  // **UPDATED: Enhanced handleSubmit with voice message support**
+  // **UPDATED: Enhanced handleSubmit with comprehensive debugging**
   const handleSubmit = async (e) => {
     e.preventDefault();
+    debugLog('🚀 Form submission started');
+    
     setIsSubmitting(true);
     setError("");
 
+    // Debug form state before validation
+    debugFormSubmission(formData, voiceBlob, smartVerification);
+
     // **UPDATED: Basic form validation with voice message option**
     if (!formData.location.address || (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0)) {
-      setError("Please select a valid location or use current location");
+      const errorMsg = "Please select a valid location or use current location";
+      debugLog('❌ Location validation failed', { error: errorMsg });
+      setError(errorMsg);
       setIsSubmitting(false);
       return;
     }
@@ -703,7 +873,9 @@ const { isLoaded } = useJsApiLoader({
     const hasVoiceMessage = voiceBlob;
 
     if (!hasDescription && !hasVoiceMessage) {
-      setError("Please provide either a description or voice message");
+      const errorMsg = "Please provide either a description or voice message";
+      debugLog('❌ Content validation failed', { error: errorMsg });
+      setError(errorMsg);
       setIsSubmitting(false);
       return;
     }
@@ -713,9 +885,12 @@ const { isLoaded } = useJsApiLoader({
       let currentUserLocation = userCurrentLocation;
       if (!currentUserLocation) {
         try {
+          debugLog('📍 Getting current user location for verification');
           currentUserLocation = await getUserCurrentLocation();
         } catch (locError) {
-          setError("Unable to get your current location for verification. Please enable location services.");
+          const errorMsg = "Unable to get your current location for verification. Please enable location services.";
+          debugLog('❌ Location verification failed', { error: errorMsg });
+          setError(errorMsg);
           setIsSubmitting(false);
           return;
         }
@@ -730,8 +905,21 @@ const { isLoaded } = useJsApiLoader({
         VERIFICATION_RADIUS_KM
       );
 
+      debugLog('📍 Location proximity check', {
+        userLocation: currentUserLocation,
+        problemLocation: {
+          lat: formData.location.coordinates[1],
+          lng: formData.location.coordinates[0]
+        },
+        distance: locationCheck.distance,
+        isWithin: locationCheck.isWithin,
+        radius: VERIFICATION_RADIUS_KM
+      });
+
       if (!locationCheck.isWithin) {
-        setError(`You are ${locationCheck.distance.toFixed(2)}km away from the problem location. You must be within ${VERIFICATION_RADIUS_KM}km to report this issue.`);
+        const errorMsg = `You are ${locationCheck.distance.toFixed(2)}km away from the problem location. You must be within ${VERIFICATION_RADIUS_KM}km to report this issue.`;
+        debugLog('❌ Location proximity failed', { error: errorMsg });
+        setError(errorMsg);
         setIsSubmitting(false);
         return;
       }
@@ -739,7 +927,13 @@ const { isLoaded } = useJsApiLoader({
       // Strict verification logic for images
       if (formData.media && smartVerification) {
         if (!smartVerification.canSubmit) {
-          setError("Your photo failed verification and cannot be submitted. Please take a fresh photo at the location or try a different image that meets the requirements.");
+          const errorMsg = "Your photo failed verification and cannot be submitted. Please take a fresh photo at the location or try a different image that meets the requirements.";
+          debugLog('❌ Smart verification failed', { 
+            error: errorMsg,
+            score: smartVerification.overallScore,
+            canSubmit: smartVerification.canSubmit
+          });
+          setError(errorMsg);
           setIsSubmitting(false);
           return;
         }
@@ -778,23 +972,35 @@ const { isLoaded } = useJsApiLoader({
       // **NEW: Add voice message if present**
       if (hasVoiceMessage) {
         submitFormData.append('voiceMessage', voiceBlob, 'voice-message.webm');
-        console.log('📢 Voice message added to form data');
+        debugLog('📢 Voice message added to form data', {
+          voiceBlobSize: voiceBlob.size,
+          voiceBlobType: voiceBlob.type
+        });
       }
       
       // Add image if present
       if (formData.media) {
         submitFormData.append('image', formData.media);
+        debugLog('📷 Image added to form data', {
+          imageName: formData.media.name,
+          imageSize: formData.media.size,
+          imageType: formData.media.type
+        });
       }
 
-      console.log('Submitting report with:', {
-        title: formData.title,
-        category: formData.category,
-        hasDescription,
-        hasVoiceMessage,
-        hasImage: !!formData.media
+      debugLog('📤 Final form data prepared for submission', {
+        formDataEntries: Array.from(submitFormData.entries()).map(([key, value]) => ({
+          key,
+          value: value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value
+        }))
       });
 
-      const response = await createReport(submitFormData);
+      const response = await debugApiCall(createReport, 'createReport', submitFormData);
+
+      debugLog('✅ Report submission successful', {
+        response: response.data,
+        reportId: response.data.data.report.reportId
+      });
 
       setSubmittedDetails({
         reportId: response.data.data.report.reportId,
@@ -804,35 +1010,57 @@ const { isLoaded } = useJsApiLoader({
       setShowSuccessPopup(true);
 
     } catch (error) {
-      console.error('Report submission error:', error);
+      debugLog('💥 Report submission failed', {
+        error: error.message,
+        status: error.response?.status,
+        responseData: error.response?.data,
+        stack: error.stack
+      }, 'error');
+      
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else if (error.response?.status === 401) {
         setError("Please login again to submit reports");
         navigate('/login');
+      } else if (error.response?.status === 500) {
+        setError("Server error occurred. Please try again or contact support if the problem persists.");
       } else {
         setError("Failed to submit report. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
+      debugLog('⏹️ Form submission completed');
     }
   };
 
   // Handle smart verification complete (existing)
   const handleSmartVerificationComplete = (result) => {
+    debugLog('✅ Smart verification completed', {
+      overallScore: result.overallScore,
+      canSubmit: result.canSubmit,
+      warnings: result.warnings
+    });
     setSmartVerification(result);
   };
 
   // Get user location on component mount (existing)
   useEffect(() => {
-    getUserCurrentLocation().catch(() => {
-      console.log('Could not get initial user location');
+    debugLog('🎯 RaiseComplaint Component Mounted', {
+      userId,
+      hasGoogleMapsKey: !!GOOGLE_MAPS_API_KEY,
+      isLoaded
+    });
+    
+    getUserCurrentLocation().catch((error) => {
+      debugLog('⚠️ Could not get initial user location', { error: error.message }, 'warn');
     });
   }, []);
 
-  // Handle input changes (existing)
+  // Handle input changes with debugging
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    debugLog('📝 Input changed', { name, value: value.substring(0, 50) + (value.length > 50 ? '...' : '') });
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -862,7 +1090,10 @@ const { isLoaded } = useJsApiLoader({
       setError(t("geolocationNotSupported"));
       return;
     }
+    
+    debugLog('📍 Auto-getting current location on mount');
     setIsGettingLocation(true);
+    
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -874,6 +1105,12 @@ const { isLoaded } = useJsApiLoader({
             `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
           );
           const data = await response.json();
+          
+          debugLog('🗺️ Reverse geocoding result', {
+            status: response.status,
+            resultsCount: data.results?.length
+          });
+          
           if (data.results && data.results.length > 0) {
             const result = data.results[0];
             let city = "", state = "", country = "";
@@ -905,6 +1142,7 @@ const { isLoaded } = useJsApiLoader({
             throw new Error(t('noAddressFound'));
           }
         } catch (error) {
+          debugLog('❌ Reverse geocoding failed', { error: error.message }, 'warn');
           const address = `${t('location')}: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setFormData(prev => ({
             ...prev,
@@ -922,6 +1160,7 @@ const { isLoaded } = useJsApiLoader({
         setIsGettingLocation(false);
       },
       (error) => {
+        debugLog('❌ Geolocation error', { error: error.message, code: error.code }, 'error');
         switch (error.code) {
           case error.PERMISSION_DENIED:
             setError(t("locationAccessDenied"));
@@ -949,6 +1188,7 @@ const { isLoaded } = useJsApiLoader({
     const el = acRef.current;
 
     const onSelect = async (e) => {
+      debugLog('🗺️ Place selected from autocomplete', { event: e });
       try {
         const place = e?.placePrediction?.toPlace?.();
         if (!place) return;
@@ -992,8 +1232,8 @@ const { isLoaded } = useJsApiLoader({
 
         setError("");
       } catch (err) {
+        debugLog('❌ Failed to fetch place details', { error: err.message }, 'error');
         setError(t("failedToFetchPlaceDetails"));
-        console.error(err);
       }
     };
 
@@ -1004,11 +1244,18 @@ const { isLoaded } = useJsApiLoader({
   // Reverse geocode function
   const reverseGeocode = useCallback(
     async ({ lat, lng }) => {
+      debugLog('🗺️ Reverse geocoding coordinates', { lat, lng });
       try {
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
         );
         const data = await response.json();
+        
+        debugLog('🗺️ Reverse geocoding response', {
+          status: response.status,
+          resultsCount: data.results?.length
+        });
+        
         if (data.results && data.results.length > 0) {
           const result = data.results[0];
           let city = "", state = "", country = "";
@@ -1036,7 +1283,7 @@ const { isLoaded } = useJsApiLoader({
           setAutocompleteValue(address);
         }
       } catch (e) {
-        console.error("Reverse geocode error:", e);
+        debugLog('❌ Reverse geocoding error', { error: e.message }, 'error');
       }
     },
     [GOOGLE_MAPS_API_KEY]
@@ -1046,6 +1293,7 @@ const { isLoaded } = useJsApiLoader({
     (event) => {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
+      debugLog('📍 Marker dragged', { lat, lng });
       setMarkerPosition({ lat, lng });
       reverseGeocode({ lat, lng });
     },
@@ -1056,6 +1304,7 @@ const { isLoaded } = useJsApiLoader({
     (event) => {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
+      debugLog('🗺️ Map clicked', { lat, lng });
       setMarkerPosition({ lat, lng });
       reverseGeocode({ lat, lng });
     },
@@ -1064,6 +1313,8 @@ const { isLoaded } = useJsApiLoader({
 
   // Get current location button
   const getCurrentLocation = () => {
+    debugLog('📍 Get current location button clicked');
+    
     if (!navigator.geolocation) {
       setError(t("geolocationNotSupported"));
       return;
@@ -1081,6 +1332,12 @@ const { isLoaded } = useJsApiLoader({
             `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
           );
           const data = await response.json();
+          
+          debugLog('🗺️ Manual location fetch result', {
+            status: response.status,
+            resultsCount: data.results?.length
+          });
+          
           if (data.results && data.results.length > 0) {
             const result = data.results[0];
             let city = "", state = "", country = "";
@@ -1110,6 +1367,7 @@ const { isLoaded } = useJsApiLoader({
             setAutocompleteValue(address);
           }
         } catch (error) {
+          debugLog('❌ Manual location fetch failed', { error: error.message }, 'warn');
           const address = `${t('location')}: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setFormData(prev => ({
             ...prev,
@@ -1127,6 +1385,7 @@ const { isLoaded } = useJsApiLoader({
         setIsGettingLocation(false);
       },
       (error) => {
+        debugLog('❌ Manual geolocation error', { error: error.message, code: error.code }, 'error');
         switch (error.code) {
           case error.PERMISSION_DENIED:
             setError(t("locationAccessDenied"));
@@ -1148,6 +1407,7 @@ const { isLoaded } = useJsApiLoader({
   };
 
   const removeFile = () => {
+    debugLog('🗑️ Removing file');
     setFormData(prev => ({ ...prev, media: null }));
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl("");
@@ -1155,6 +1415,7 @@ const { isLoaded } = useJsApiLoader({
   };
 
   const closePopupAndNavigate = () => {
+    debugLog('🏠 Closing popup and navigating');
     setShowSuccessPopup(false);
     navigate(`/user/${userId}`);
   };
@@ -1168,13 +1429,26 @@ const { isLoaded } = useJsApiLoader({
     
     const basicRequirements = hasTitle && hasCategory && hasContent && hasLocation;
     
-    if (!basicRequirements) return false;
+    if (!basicRequirements) {
+      debugLog('❌ Form validation failed - basic requirements', {
+        hasTitle, hasCategory, hasContent, hasLocation
+      });
+      return false;
+    }
     
     // If image is uploaded, smart verification MUST pass
     if (formData.media && smartVerification) {
-      return smartVerification.canSubmit;
+      const result = smartVerification.canSubmit;
+      if (!result) {
+        debugLog('❌ Form validation failed - smart verification', {
+          canSubmit: smartVerification.canSubmit,
+          score: smartVerification.overallScore
+        });
+      }
+      return result;
     }
     
+    debugLog('✅ Form validation passed');
     return true;
   };
 
@@ -1187,6 +1461,21 @@ const { isLoaded } = useJsApiLoader({
     return "Submit Complaint";
   };
 
+  // Debug component render
+  debugLog('🎨 RaiseComplaint Component Rendering', {
+    isSubmitting,
+    error: error || 'none',
+    formData: {
+      title: formData.title,
+      category: formData.category,
+      descriptionLength: formData.description?.length || 0,
+      hasLocation: !!formData.location.address
+    },
+    hasVoiceBlob: !!voiceBlob,
+    hasMedia: !!formData.media,
+    canSubmit: canSubmit()
+  });
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black/50">
@@ -1198,10 +1487,10 @@ const { isLoaded } = useJsApiLoader({
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <div className="absolute inset-0 z-0">
-<div
-  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-  style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userpagebg.jpg')` }}
-></div>
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userpagebg.jpg')` }}
+        />
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       </div>
 

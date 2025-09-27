@@ -135,5 +135,172 @@
   "noComplaintsSubmittedYet": "You haven't submitted any complaints yet.",
   "submitFirstComplaint": "Submit Your First Complaint",
   "noComplaintsFound": "No complaints found",
-  "failedToLoadComplaints": "Failed to load complaints"
+  "failedToLoadComplaints": "Failed to load complaints",
+  "standard": "Standard",
+  "dark": "Dark",
+  "satellite": "Satellite",
+  "standardTooltip": "Standard Map",
+  "darkTooltip": "Dark Map",
+  "satelliteTooltip": "Satellite View",
+  "ranchiDescription": "Overview of all activity across Jharkhand with priority markers.",
+  "dhanbadDescription": "Focusing on high priority areas with the most critical issues.",
+  "jamshedpurDescription": "Focusing on medium priority areas that need attention.",
+  "deogharDescription": "Focusing on low priority areas for monitoring.",
+  "defaultDescription": "Showing all activity in this region.",
+  "waitingContainer": "Waiting for container...",
+  "loadingLibraries": "Loading libraries...",
+  "initializingMap": "Initializing map...",
+  "regionCenter": "Region center",
+  "activityIntensity": "Activity Intensity",
+  "priority": "Priority",
+  "Fetchingyourcomplaintsfromtheserver":"Fetching your complaints from the server",
+  
+  "low": "Low",
+  "high": "High",
+  "heatmapVisualization": "Heatmap Visualization",
+  "heatmap": {
+    "sp-overview": {
+      "title": "Gautam Buddha Nagar — Overall Complaint Distribution",
+      "description": "Comprehensive view of all complaint types across Gautam Buddha Nagar district"
+    },
+    "sp-high": {
+      "title": "High-Priority Complaints — Critical Zones",
+      "description": "Areas requiring immediate attention with urgent infrastructure and service issues"
+    },
+    "sp-medium": {
+      "title": "Medium-Priority Complaints — Emerging Clusters",
+      "description": "Regions showing developing patterns of complaints needing proactive measures"
+    },
+    "sp-low": {
+      "title": "Low-Priority Complaints — Scattered Regions",
+      "description": "Isolated complaints spread across various locations for routine monitoring"
+    }
+  },
+  "chatbot": {
+    "welcomeMessage": "Hey there! I'm JanBot, your civic assistant. I can help you report issues, track your complaints, and answer questions about our platform. What would you like to know?",
+    "openButton": "Open chat",
+    "closeButton": "Close chat",
+    "sendButton": "Send message",
+    "title": "JanBot Assistant",
+    "subtitle": "Here to help with civic issues",
+    "quickQuestions": "Quick questions:",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "placeholder": "Ask JanBot about reporting issues...",
+    "suggestions": {
+      "report": "How to report an issue?",
+      "types": "What can I report?",
+      "track": "How to track my report?",
+      "update": "No update on my report",
+      "time": "How long until resolution?",
+      "edit": "Can I edit my report?",
+      "escalate": "How to escalate an issue?",
+      "department": "Who fixes reported issues?",
+      "photo": "How to add photos?",
+      "urgent": "What are urgent issues?",
+      "notifications": "How notifications work?",
+      "community": "See community reports?"
+    },
+    "faq": {
+      "report": {
+        "question": "how to report|report issue|create report|submit issue",
+        "answer": "To report an issue: 1) Click the 'Raise a Complaint' card on your dashboard, 2) Select the issue type, 3) Add a photo if possible, 4) Provide details and location, 5) Submit. You can then track its status in your dashboard!"
+      },
+      "types": {
+        "question": "what can I report|types of issues|what issues|problems to report",
+        "answer": "You can report various civic issues like potholes, broken streetlights, garbage problems, water leaks, damaged public property, illegal parking, drainage issues, stray animals, and more. If you're unsure, just report it and we'll route it to the right department!"
+      },
+      "track": {
+        "question": "track my report|check status|report status|where is my complaint",
+        "answer": "You can track your reports in the 'My Reports' section. Each report shows its current status with timestamps. You'll also get notifications when the status changes. Want me to help you find your recent reports?"
+      },
+      "status": {
+        "question": "status meanings|what does status mean|submitted|under review|in progress",
+        "answer": "Here's what each status means: • Submitted: We've received your report • Under Review: Our team is assessing it • In Progress: Work has started • Resolved: Issue is fixed • Closed: Report is completed. You can see these on the interactive timeline for each report."
+      },
+      "edit": {
+        "question": "edit my report|change report|update report|modify complaint",
+        "answer": "You can edit a report only if it's still in 'Submitted' status. Once it moves to 'Under Review' or further, you can't edit it but can add comments to provide additional information. Need to update a report?"
+      },
+      "time": {
+        "question": "response time|how long|when fixed|time to resolve",
+        "answer": "Response times vary: • Critical issues: 24-48 hours • Standard issues: 3-5 days • Complex issues: 1-2 weeks. You can check average resolution times in the Analytics section. Urgent matters are prioritized!"
+      },
+      "delay": {
+        "question": "no update|no progress|stuck|why taking so long|delayed",
+        "answer": "If your report hasn't been updated, it could be because: 1) The department is experiencing high volume 2) Additional resources are needed 3) Weather conditions are delaying work 4) The issue is complex and requires more time. You can add a comment to your report to request an update, and our team will follow up."
+      },
+      "escalate": {
+        "question": "escalate|talk to supervisor|manager|not satisfied",
+        "answer": "If you're not satisfied with the progress, you can request escalation by adding a comment to your report with 'Request escalation' and our team leads will review it. For urgent matters, you can also contact support@janconnect.com directly."
+      },
+      "duplicate": {
+        "question": "multiple reports|duplicate|same issue",
+        "answer": "If you see multiple reports for the same issue, don't worry! Our system groups nearby reports together so departments can prioritize areas with multiple complaints. You can still report it as additional reports help demonstrate the severity of the problem."
+      },
+      "delete": {
+        "question": "withdraw|delete|remove|cancel my report",
+        "answer": "You can request to withdraw a report if it's still in 'Submitted' status. For reports that are already being processed, please add a comment explaining why you want to withdraw it, and our team will update the status accordingly."
+      },
+      "greeting": {
+        "question": "hello|hi|hey|greetings|what's up",
+        "answer": "Hello! 👋 I'm JanBot, your civic assistant. I can help you report issues, track complaints, and answer questions about our platform. What would you like to know today?"
+      },
+      "thanks": {
+        "question": "thank|thanks|appreciate|thank you",
+        "answer": "You're welcome! 😊 Happy to help. Is there anything else you'd like to know about reporting issues or tracking complaints?"
+      },
+      "priority": {
+        "question": "priority|urgent|emergency|important issue",
+        "answer": "For urgent safety issues (like downed power lines, major road hazards), please call emergency services first. In the app, mark these as 'High' priority when reporting. These get expedited review and response."
+      },
+      "photo": {
+        "question": "photo|picture|image|add photo",
+        "answer": "Adding photos is highly recommended! 📸 It helps our teams understand the issue better. You can upload images directly when creating a report. Good photos show the scale, location, and severity of the problem."
+      },
+      "location": {
+        "question": "location|map|where|pin location",
+        "answer": "The app will automatically detect your location when you report an issue, but you can also manually adjust the pin on the map to ensure accuracy. Precise location helps our teams find the problem quickly!"
+      },
+      "department": {
+        "question": "department|who fixes|which department|public works",
+        "answer": "Reports are automatically routed: • Potholes → Public Works • Broken streetlights → Energy Department • Garbage issues → Sanitation • Water leaks → Water Authority • Illegal parking → Traffic Police"
+      },
+      "privacy": {
+        "question": "privacy|data|information|my data",
+        "answer": "Your personal information is kept confidential. Only necessary details (issue location and description) are shared with departments to resolve the problem. We never share your contact information publicly. Read our Privacy Policy in your account settings."
+      },
+      "notifications": {
+        "question": "notifications|alerts|updates|notify me",
+        "answer": "You'll receive notifications when: • Your report status changes • Officials add comments • The issue is resolved • Similar issues are reported nearby. Manage preferences in your account settings."
+      },
+      "community": {
+        "question": "community|others|neighbors|nearby issues",
+        "answer": "You can see issues reported by others on the interactive map. This helps avoid duplicates and shows what problems are being addressed in your area. Community reporting makes our neighborhoods better!"
+      },
+      "support": {
+        "question": "help|support|contact|customer service",
+        "answer": "For additional help: • Email: support@janconnect.com • Phone: 1-800-JAN-HELP (M-F, 8am-6pm) • In-app: Help section in your profile. Our team responds within 24 hours!"
+      },
+      "features": {
+        "question": "features|what can I do|capabilities|how it works",
+        "answer": "With JanConnect, you can: • Report civic issues • Track resolution status • View community reports • See analytics • Receive notifications • Earn community points • Make your neighborhood better! 🏙️"
+      },
+      "about": {
+        "question": "who are you|what are you|janbot|about you",
+        "answer": "I'm JanBot, your AI-powered civic assistant! I'm here to help you navigate our platform, report issues, track complaints, and get your questions answered. I'm available 24/7 to assist you with all things related to civic issue reporting."
+      }
+    },
+    "patterns": {
+      "unhappy": "not happy",
+      "problem": "problem"
+    },
+    "responses": {
+      "unhappy": "I understand you're frustrated. Dealing with civic issues can be challenging. Would you like me to help you escalate your report or check its current status?",
+      "whyNot": "I'm not sure why your issue hasn't been resolved yet. It could be due to high volume, resource constraints, or complexity. Would you like to check the status of your report or add a comment to request an update?",
+      "when": "Response times vary based on issue type and severity. Critical issues are typically addressed within 24-48 hours, while standard issues may take 3-5 days. Would you like to check the status of a specific report?",
+      "problem": "I can help you report a new issue or check on an existing one. Would you like to know how to report a problem or check the status of a report you've already submitted?",
+      "default": "I'm not sure about that yet. Try asking about reporting issues, tracking complaints, or how our platform works. For specific account questions, contact our support team at support@janconnect.com."
+    }
+  }
 }

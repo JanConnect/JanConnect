@@ -1757,6 +1757,9 @@ const DepartmentAssignment = ({
       <div>
         <label className="block text-sm font-medium text-white/70 mb-2">Department Assignment</label>
         <select
+        style={{ color: 'white',
+                  backgroundColor: 'gray',
+                 }}
           value={selectedDepartment}
           onChange={(e) => setSelectedDepartment(e.target.value)}
           className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -1974,6 +1977,9 @@ const ComplaintDetailView = ({
             <h3 className="text-lg font-semibold text-white mb-4">Update Status</h3>
             <div className="space-y-4">
               <select
+              style={{ color: 'white',
+                  backgroundColor: 'gray',
+                 }}
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"

@@ -639,7 +639,7 @@ export default function TrackComplaint() {
             <div className="text-center py-8 text-white/60">
               <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
               <p>{t("loadingYourComplaints")}</p>
-              <p className="text-xs mt-2">Fetching your complaints from the server...</p>
+              <p className="text-xs mt-2">{t("Fetchingyourcomplaintsfromtheserver")}...</p>
             </div>
           )}
 

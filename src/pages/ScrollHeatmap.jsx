@@ -1,5 +1,6 @@
 // ScrollHeatmap.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "leaflet/dist/leaflet.css";
 import "./ScrollHeat.css";
 import L from "leaflet";
@@ -18,19 +19,19 @@ const createLeafletIcon = () => {
 
 // Function to determine priority based on value
 const getPriority = (value) => {
-  if (value >= 150) return "High";
-  if (value >= 100) return "Medium";
-  return "Low";
+  if (value >= 150) return "high";
+  if (value >= 100) return "medium";
+  return "low";
 };
 
 // Function to get color based on priority
 const getColor = (priority) => {
   switch (priority) {
-    case "High":
+    case "high":
       return "#FF3B30";
-    case "Medium":
+    case "medium":
       return "#FFCC00";
-    case "Low":
+    case "low":
       return "#34C759";
     default:
       return "#34C759";
@@ -38,6 +39,7 @@ const getColor = (priority) => {
 };
 
 const ScrollHeatmap = () => {
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const heatLayerRef = useRef(null);
   const markersRef = useRef([]);
@@ -48,7 +50,6 @@ const ScrollHeatmap = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapInitialized, setMapInitialized] = useState(false);
   const [containerReady, setContainerReady] = useState(false);
-
   const [Leaflet, setLeaflet] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [mapStyle, setMapStyle] = useState("standard");
@@ -60,7 +61,31 @@ const ScrollHeatmap = () => {
     color: getColor(getPriority(point.value)),
   }));
 
-  const scrollpoints = sampleData.scrollpoints;
+  // Function to get translated title based on scrollpoint ID
+  const getTranslatedTitle = (scrollpointId, defaultTitle) => {
+    const translationKey = `heatmap.${scrollpointId}.title`;
+    return t(translationKey, { defaultValue: defaultTitle });
+  };
+
+  // Function to get translated description based on scrollpoint ID
+  const getTranslatedDescription = (scrollpointId) => {
+    const translationKey = `heatmap.${scrollpointId}.description`;
+    const defaultDescriptions = {
+      "sp-overview": "Overview of all activity across Gautam Buddha Nagar with priority markers.",
+      "sp-high": "Focusing on high priority areas with the most critical issues.",
+      "sp-medium": "Focusing on medium priority areas that need attention.",
+      "sp-low": "Focusing on low priority areas for monitoring."
+    };
+    
+    return t(translationKey, { defaultValue: defaultDescriptions[scrollpointId] || "Showing all activity in this region." });
+  };
+
+  // Create scrollpoints with translated titles and descriptions
+  const translatedScrollpoints = sampleData.scrollpoints.map(sp => ({
+    ...sp,
+    title: getTranslatedTitle(sp.id, sp.title),
+    description: getTranslatedDescription(sp.id)
+  }));
 
   // ✅ Check if container has proper dimensions
   useEffect(() => {
@@ -124,18 +149,18 @@ const ScrollHeatmap = () => {
   // Get heatmap color based on severity
   const getHeatColor = (priority) => {
     switch (priority) {
-      case "High":
+      case "high":
         return { 0.4: "#FF3B30", 0.7: "#FF6B60", 1.0: "#FF3B30" };
-      case "Medium":
+      case "medium":
         return { 0.4: "#FFCC00", 0.7: "#FFDD66", 1.0: "#FFCC00" };
-      case "Low":
+      case "low":
         return { 0.4: "#34C759", 0.7: "#66D98F", 1.0: "#34C759" };
       default:
         return { 0.4: "#34C759", 0.7: "#66D98F", 1.0: "#34C759" };
     }
   };
 
-  // Map style configurations
+  // Map style configurations with translations
   const mapStyles = {
     standard: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
@@ -146,6 +171,11 @@ const ScrollHeatmap = () => {
     standard: "&copy; OpenStreetMap contributors",
     dark: "&copy; OpenStreetMap contributors, &copy; CARTO",
     satellite: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+  };
+
+  // Map style labels for translation
+  const getMapStyleLabel = (style) => {
+    return t(`mapStyle.${style}`, style.charAt(0).toUpperCase() + style.slice(1));
   };
 
   // ✅ Initialize map only when everything is ready
@@ -163,8 +193,8 @@ const ScrollHeatmap = () => {
         mapContainer.style.minHeight = "400px";
 
         const map = L.map(mapContainer, {
-          center: [23.5, 85.0],
-          zoom: 7,
+          center: [28.5355, 77.3910], // Updated to Gautam Buddha Nagar center
+          zoom: 11,
           minZoom: 5,
           maxZoom: 15,
           preferCanvas: true,
@@ -216,7 +246,7 @@ const ScrollHeatmap = () => {
         const watermark = L.control({position: 'topright'});
         watermark.onAdd = function(map) {
           const div = L.DomUtil.create('div', 'watermark');
-          div.innerHTML = 'Heatmap Visualization';
+          div.innerHTML = t("heatmapVisualization", "Heatmap Visualization");
           return div;
         };
         watermark.addTo(map);
@@ -231,7 +261,7 @@ const ScrollHeatmap = () => {
     };
 
     initializeMap();
-  }, [Leaflet, containerReady, mapInitialized]);
+  }, [Leaflet, containerReady, mapInitialized, t]);
 
   // ✅ Add initial heatmap after map is initialized
   useEffect(() => {
@@ -286,14 +316,11 @@ const ScrollHeatmap = () => {
     const map = mapRef.current;
     const heat = heatLayerRef.current;
 
-    const sp = scrollpoints.find((s) => s.id === activeId);
+    const sp = translatedScrollpoints.find((s) => s.id === activeId);
     if (!sp) return;
 
     // Ensure map has valid size before operations
     map.invalidateSize();
-
-    // Your existing heatmap logic here...
-    // [Keep all your existing heatmap logic from the original code]
 
     map.flyTo(sp.center, sp.zoom, { duration: 1.2, easeLinearity: 0.25 });
 
@@ -312,7 +339,7 @@ const ScrollHeatmap = () => {
       interactive: false,
     }).addTo(map);
     pulseLayerRef.current.push(m);
-  }, [activeId, mapInitialized, data, scrollpoints]);
+  }, [activeId, mapInitialized, data, translatedScrollpoints]);
 
   // Change map style
   const changeMapStyle = (style) => {
@@ -339,7 +366,7 @@ const ScrollHeatmap = () => {
   };
 
   // Timeline dots
-  const timelineDots = scrollpoints.map((sp) => (
+  const timelineDots = translatedScrollpoints.map((sp) => (
     <div
       key={sp.id}
       className={`dot ${activeId === sp.id ? "active" : ""}`}
@@ -347,10 +374,17 @@ const ScrollHeatmap = () => {
     />
   ));
 
+  // Loading messages with translations
+  const getLoadingMessage = () => {
+    if (!containerReady) return t("loading.waitingContainer", "Waiting for container...");
+    if (!mapLoaded) return t("loading.loadingLibraries", "Loading libraries...");
+    return t("loading.initializingMap", "Initializing map...");
+  };
+
   return (
     <div className="scrollheat-container">
       <div className="scroll-col" ref={containerRef}>
-        {scrollpoints.map((sp) => (
+        {translatedScrollpoints.map((sp) => (
           <section
             key={sp.id}
             className="scrollpoint"
@@ -362,20 +396,10 @@ const ScrollHeatmap = () => {
             }}
           >
             <h2>{sp.title}</h2>
-            <p>
-              {sp.id === "sp-ranchi"
-                ? "Overview of all activity across Jharkhand with priority markers."
-                : sp.id === "sp-dhanbad"
-                ? "Focusing on high priority areas with the most critical issues."
-                : sp.id === "sp-jamshedpur"
-                ? "Focusing on medium priority areas that need attention."
-                : sp.id === "sp-deoghar"
-                ? "Focusing on low priority areas for monitoring."
-                : "Showing all activity in this region."}
-            </p>
+            <p>{sp.description}</p>
             <div style={{ marginTop: "1rem", opacity: 0.85 }}>
               <small>
-                Region center: {sp.center[0].toFixed(3)},{" "}
+                {t("regionCenter", "Region center")}: {sp.center[0].toFixed(3)},{" "}
                 {sp.center[1].toFixed(3)}
               </small>
             </div>
@@ -397,11 +421,7 @@ const ScrollHeatmap = () => {
           {(!mapLoaded || !containerReady || !mapInitialized) && (
             <div className="map-loading">
               <div className="loading-spinner"></div>
-              <span>
-                {!containerReady ? "Waiting for container..." : 
-                 !mapLoaded ? "Loading libraries..." : 
-                 "Initializing map..."}
-              </span>
+              <span>{getLoadingMessage()}</span>
             </div>
           )}
         </div>
@@ -412,23 +432,23 @@ const ScrollHeatmap = () => {
             <button 
               className={mapStyle === "standard" ? "active" : ""}
               onClick={() => changeMapStyle("standard")}
-              title="Standard Map"
+              title={t("mapStyle.standardTooltip", "Standard Map")}
             >
-              Standard
+              {getMapStyleLabel("standard")}
             </button>
             <button 
               className={mapStyle === "dark" ? "active" : ""}
               onClick={() => changeMapStyle("dark")}
-              title="Dark Map"
+              title={t("mapStyle.darkTooltip", "Dark Map")}
             >
-              Dark
+              {getMapStyleLabel("dark")}
             </button>
             <button 
               className={mapStyle === "satellite" ? "active" : ""}
               onClick={() => changeMapStyle("satellite")}
-              title="Satellite View"
+              title={t("mapStyle.satelliteTooltip", "Satellite View")}
             >
-              Satellite
+              {getMapStyleLabel("satellite")}
             </button>
           </div>
         )}
@@ -437,7 +457,7 @@ const ScrollHeatmap = () => {
           <>
             <div className="legend">
               <div style={{ fontSize: 13, fontWeight: 600 }}>
-                Activity Intensity
+                {t("activityIntensity", "Activity Intensity")}
               </div>
               <div className="bar" />
               <div
@@ -447,35 +467,35 @@ const ScrollHeatmap = () => {
                   marginTop: 6,
                 }}
               >
-                <span style={{ fontSize: 11 }}>Low</span>
-                <span style={{ fontSize: 11 }}>High</span>
+                <span style={{ fontSize: 11 }}>{t("low", "Low")}</span>
+                <span style={{ fontSize: 11 }}>{t("high", "High")}</span>
               </div>
             </div>
 
             <div className="priority-legend">
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                Priority
+                {t("priority", "Priority")}
               </div>
               <div className="priority-item">
                 <div
                   className="priority-dot"
                   style={{ backgroundColor: "#FF3B30" }}
                 ></div>
-                <span>High (&gt;= 150)</span>
+                <span>{t("high", "High")} (&gt;= 150)</span>
               </div>
               <div className="priority-item">
                 <div
                   className="priority-dot"
                   style={{ backgroundColor: "#FFCC00" }}
                 ></div>
-                <span>Medium (100-149)</span>
+                <span>{t("medium", "Medium")} (100-149)</span>
               </div>
               <div className="priority-item">
                 <div
                   className="priority-dot"
                   style={{ backgroundColor: "#34C759" }}
                 ></div>
-                <span>Low (&lt; 100)</span>
+                <span>{t("low", "Low")} (&lt; 100)</span>
               </div>
             </div>
 

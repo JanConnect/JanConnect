@@ -9,6 +9,19 @@ import {
 import { getUserReports } from '../api/report';
 import { useTranslation } from "react-i18next";
 
+// Debug logging utility
+const debugLog = (message, data = null, type = 'info') => {
+  const timestamp = new Date().toISOString();
+  const env = import.meta.env.MODE || 'development';
+  const logMessage = `[${timestamp}] [${env.toUpperCase()}] [TRACK-COMPLAINT] ${message}`;
+  
+  if (data) {
+    console[type](logMessage, data);
+  } else {
+    console[type](logMessage);
+  }
+};
+
 // **Fixed Image Modal Component with Higher Z-Index**
 const ImageModal = ({ isOpen, onClose, imageUrl, title }) => {
   if (!isOpen) return null;
@@ -60,104 +73,245 @@ export default function TrackComplaint() {
   // Image modal state
   const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', title: '' });
 
-  // In your TrackComplaint component - Add debug logging
-useEffect(() => {
-    const fetchUserComplaints = async () => {
-        setLoading(true);
-        setError("");
-        
-        try {
-            // Debug token
-            const token = localStorage.getItem('accessToken');
-            console.log('🔐 Frontend Token:', token ? `Present (length: ${token.length})` : 'Missing');
-            
-            if (!token) {
-                throw new Error('NO_TOKEN');
-            }
+  // Enhanced debug function for API calls
+  const debugApiCall = async (apiFunction, functionName, params = {}) => {
+    debugLog(`🚀 API Call Started: ${functionName}`, {
+      userId,
+      params,
+      timestamp: new Date().toISOString()
+    });
 
-            // Test if token is valid JWT format
-            try {
-                const parts = token.split('.');
-                if (parts.length !== 3) {
-                    throw new Error('Invalid token format');
-                }
-                console.log('✅ Token format valid');
-            } catch (tokenError) {
-                console.error('❌ Invalid token format:', tokenError);
-                localStorage.removeItem('accessToken');
-                throw new Error('INVALID_TOKEN_FORMAT');
-            }
+    try {
+      // Check token first
+      const token = localStorage.getItem('accessToken');
+      debugLog('🔐 Token Check', {
+        exists: !!token,
+        length: token?.length,
+        preview: token ? `${token.substring(0, 20)}...` : 'none'
+      });
 
-            const response = await getUserReports({ page: 1, limit: 50 });
-            console.log('📊 API Response:', response);
-            
-            if (response.data && response.data.success) {
-                const complaintsData = response.data.data?.reports || [];
-                setComplaints(complaintsData);
-                setFilteredComplaints(complaintsData);
-                console.log(`✅ Loaded ${complaintsData.length} complaints`);
-            } else {
-                throw new Error('INVALID_RESPONSE_FORMAT');
-            }
-        } catch (err) {
-            console.error('💥 Detailed error:', {
-                message: err.message,
-                status: err.response?.status,
-                data: err.response?.data
-            });
-            
-            if (err.response?.status === 401) {
-                setError("Session expired. Please login again.");
-                localStorage.removeItem('accessToken');
-                setTimeout(() => navigate('/login'), 2000);
-            } else if (err.message === 'NO_TOKEN') {
-                setError("Please login to view your complaints.");
-                navigate('/login');
-            } else {
-                setError(err.response?.data?.message || "Failed to load complaints");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (!token) {
+        throw new Error('NO_TOKEN');
+      }
 
-    fetchUserComplaints();
-}, [userId, navigate, t]);
-
-  useEffect(() => {
-    const fetchUserComplaints = async () => {
-      setLoading(true);
-      setError("");
-      
+      // Validate token format
       try {
-        const response = await getUserReports({ page: 1, limit: 50 });
-        const complaintsData = response.data.data.reports || [];
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          throw new Error('Invalid JWT token format');
+        }
+        debugLog('✅ Token format valid');
+      } catch (tokenError) {
+        debugLog('❌ Invalid token format', { error: tokenError.message });
+        localStorage.removeItem('accessToken');
+        throw new Error('INVALID_TOKEN_FORMAT');
+      }
+
+      // Make API call
+      debugLog(`📡 Making API request to ${functionName}`, {
+        baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:8000',
+        endpoint: '/api/v1/reports/user/me',
+        params
+      });
+
+      const response = await apiFunction(params);
+      
+      debugLog(`✅ API Response Success: ${functionName}`, {
+        status: response.status,
+        statusText: response.statusText,
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : 'none'
+      });
+
+      return response;
+
+    } catch (error) {
+      debugLog(`💥 API Call Failed: ${functionName}`, {
+        message: error.message,
+        name: error.name,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          params: error.config?.params
+        }
+      }, 'error');
+
+      throw error;
+    }
+  };
+
+  // Enhanced fetch function with comprehensive debugging
+  const fetchUserComplaints = async () => {
+    debugLog('🔍 fetchUserComplaints STARTED', {
+      userId,
+      component: 'TrackComplaint',
+      timestamp: new Date().toISOString()
+    });
+
+    setLoading(true);
+    setError("");
+    
+    try {
+      // Check environment and connectivity first
+      debugLog('🌍 Environment Check', {
+        mode: import.meta.env.MODE,
+        baseURL: import.meta.env.VITE_BASE_URL,
+        nodeEnv: process.env.NODE_ENV
+      });
+
+      // Test backend connectivity
+      try {
+        const healthResponse = await fetch(`${import.meta.env.VITE_BASE_URL || 'http://localhost:8000'}/health`);
+        debugLog('🏥 Backend Health Check', {
+          status: healthResponse.status,
+          ok: healthResponse.ok
+        });
+        
+        if (!healthResponse.ok) {
+          throw new Error(`Backend health check failed: ${healthResponse.status}`);
+        }
+      } catch (healthError) {
+        debugLog('❌ Backend connectivity issue', {
+          error: healthError.message,
+          url: import.meta.env.VITE_BASE_URL || 'http://localhost:8000'
+        }, 'warn');
+      }
+
+      const response = await debugApiCall(getUserReports, 'getUserReports', { page: 1, limit: 50 });
+      
+      debugLog('📊 Processing API Response', {
+        responseStructure: {
+          data: !!response.data,
+          dataData: !!response.data?.data,
+          reports: !!response.data?.data?.reports
+        }
+      });
+
+      if (response.data && response.data.success) {
+        const complaintsData = response.data.data?.reports || [];
+        
+        debugLog('✅ Complaints data received', {
+          count: complaintsData.length,
+          sample: complaintsData.length > 0 ? {
+            firstId: complaintsData[0].reportId,
+            firstTitle: complaintsData[0].title,
+            firstStatus: complaintsData[0].status
+          } : 'no complaints'
+        });
+
         setComplaints(complaintsData);
         setFilteredComplaints(complaintsData);
-      } catch (err) {
-        console.error('Error fetching complaints:', err);
         
-        if (err.response?.status === 401) {
-          setError(t("loginAgainToView"));
-          navigate('/login');
-        } else if (err.response?.status === 404) {
-          setError(t("noComplaintsFound"));
-        } else {
-          setError(err.response?.data?.message || t("failedToLoadComplaints"));
-        }
-      } finally {
-        setLoading(false);
+        debugLog('✅ Complaints state updated successfully');
+
+      } else {
+        debugLog('❌ Invalid response format', {
+          response: response.data,
+          expectedStructure: '{ success: true, data: { reports: [] } }'
+        });
+        throw new Error('INVALID_RESPONSE_FORMAT');
       }
-    };
+
+    } catch (err) {
+      debugLog('💥 Error in fetchUserComplaints', {
+        errorName: err.name,
+        errorMessage: err.message,
+        errorCode: err.code,
+        stack: err.stack
+      }, 'error');
+
+      // Handle specific error cases
+      if (err.response?.status === 401) {
+        const errorMsg = "Session expired. Please login again.";
+        debugLog('🔐 Authentication error', { message: errorMsg });
+        setError(errorMsg);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        setTimeout(() => navigate('/login'), 2000);
+        
+      } else if (err.message === 'NO_TOKEN') {
+        const errorMsg = "Please login to view your complaints.";
+        debugLog('🔐 No token found', { message: errorMsg });
+        setError(errorMsg);
+        navigate('/login');
+        
+      } else if (err.message === 'INVALID_TOKEN_FORMAT') {
+        const errorMsg = "Invalid session. Please login again.";
+        debugLog('🔐 Invalid token format', { message: errorMsg });
+        setError(errorMsg);
+        navigate('/login');
+        
+      } else if (err.response?.status === 404) {
+        const errorMsg = t("noComplaintsFound");
+        debugLog('📭 No complaints found', { message: errorMsg });
+        setError(errorMsg);
+        
+      } else if (err.response?.status === 500) {
+        const errorMsg = "Server error. Please try again later.";
+        debugLog('💥 Server 500 error', { 
+          message: errorMsg,
+          serverError: err.response?.data 
+        });
+        setError(errorMsg);
+        
+      } else if (err.code === 'NETWORK_ERROR' || err.code === 'ECONNREFUSED') {
+        const errorMsg = "Cannot connect to server. Please check your connection.";
+        debugLog('🌐 Network error', { message: errorMsg });
+        setError(errorMsg);
+        
+      } else {
+        const errorMsg = err.response?.data?.message || err.message || t("failedToLoadComplaints");
+        debugLog('❌ Generic error', { message: errorMsg });
+        setError(errorMsg);
+      }
+    } finally {
+      setLoading(false);
+      debugLog('⏹️ fetchUserComplaints COMPLETED', {
+        loading: false,
+        complaintsCount: complaints.length,
+        error: error || 'none'
+      });
+    }
+  };
+
+  // Enhanced useEffect with debugging
+  useEffect(() => {
+    debugLog('🎯 TrackComplaint Component Mounted', {
+      userId,
+      path: window.location.pathname,
+      search: window.location.search
+    });
 
     fetchUserComplaints();
+
+    // Cleanup function
+    return () => {
+      debugLog('🧹 TrackComplaint Component Unmounted');
+    };
   }, [userId, navigate, t]);
 
+  // Enhanced filtering useEffect
   useEffect(() => {
+    debugLog('🔍 Filtering complaints', {
+      totalComplaints: complaints.length,
+      selectedStatus,
+      searchQuery,
+      searchQueryLength: searchQuery.length
+    });
+
     let filtered = complaints;
 
     if (selectedStatus !== "all") {
       filtered = filtered.filter(complaint => complaint.status === selectedStatus);
+      debugLog('✅ Status filter applied', {
+        status: selectedStatus,
+        filteredCount: filtered.length
+      });
     }
 
     if (searchQuery) {
@@ -168,9 +322,17 @@ useEffect(() => {
         complaint.category.toLowerCase().includes(query) ||
         (complaint.contentSummary && complaint.contentSummary.toLowerCase().includes(query))
       );
+      debugLog('✅ Search filter applied', {
+        query: searchQuery,
+        filteredCount: filtered.length
+      });
     }
 
     setFilteredComplaints(filtered);
+    debugLog('📊 Filtering completed', {
+      originalCount: complaints.length,
+      filteredCount: filtered.length
+    });
   }, [complaints, selectedStatus, searchQuery]);
 
   const getStatusConfig = (status) => {
@@ -216,28 +378,45 @@ useEffect(() => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      debugLog('❌ Date formatting error', { dateString, error: error.message }, 'warn');
+      return 'Invalid Date';
+    }
   };
 
   const formatDetailDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      debugLog('❌ Detailed date formatting error', { dateString, error: error.message }, 'warn');
+      return 'Invalid Date';
+    }
   };
 
   const getStatusCount = (status) => {
-    return complaints.filter(c => c.status === status).length;
+    const count = complaints.filter(c => c.status === status).length;
+    debugLog('📈 Status count', { status, count });
+    return count;
   };
 
   const renderStars = (rating) => {
+    if (!rating || rating < 1 || rating > 5) {
+      debugLog('⚠️ Invalid rating value', { rating }, 'warn');
+      rating = 0;
+    }
+    
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
@@ -254,40 +433,71 @@ useEffect(() => {
   };
 
   const toggleComplaintDetails = (complaint) => {
+    debugLog('📋 Toggling complaint details', {
+      complaintId: complaint.reportId,
+      currentlySelected: selectedComplaint?.reportId,
+      action: selectedComplaint?.reportId === complaint.reportId ? 'closing' : 'opening'
+    });
+    
     setSelectedComplaint(selectedComplaint?.reportId === complaint.reportId ? null : complaint);
   };
 
   const openDetailModal = (complaint) => {
+    debugLog('🔍 Opening detail modal', { complaintId: complaint.reportId });
     setSelectedComplaint(complaint);
     setDetailModalOpen(true);
   };
 
-  // Image modal functions
+  // Image modal functions with debugging
   const openImageModal = (imageUrl, title) => {
+    debugLog('🖼️ Opening image modal', { imageUrl: imageUrl.substring(0, 50) + '...', title });
     setImageModal({ isOpen: true, imageUrl, title });
   };
 
   const closeImageModal = () => {
+    debugLog('🖼️ Closing image modal');
     setImageModal({ isOpen: false, imageUrl: '', title: '' });
   };
 
   // Helper function to get content display
   const getContentDisplay = (complaint) => {
+    let content = 'No description available';
+    
     if (complaint.contentSummary) {
-      return complaint.contentSummary;
+      content = complaint.contentSummary;
     } else if (complaint.description) {
-      return complaint.description;
+      content = complaint.description;
     } else if (complaint.voiceMessage?.url) {
-      return '🎤 Voice Message';
-    } else {
-      return 'No description available';
+      content = '🎤 Voice Message';
     }
+    
+    debugLog('📝 Content display', { 
+      complaintId: complaint.reportId,
+      hasContentSummary: !!complaint.contentSummary,
+      hasDescription: !!complaint.description,
+      hasVoiceMessage: !!complaint.voiceMessage?.url,
+      contentLength: content.length
+    });
+    
+    return content;
   };
 
   // Helper function to format status for translation
   const formatStatusForTranslation = (status) => {
-    return status.replace('-', '').replace('_', '');
+    const formatted = status.replace('-', '').replace('_', '');
+    debugLog('🌐 Formatting status for translation', { original: status, formatted });
+    return formatted;
   };
+
+  // Debug component render
+  debugLog('🎨 TrackComplaint Component Rendering', {
+    loading,
+    error: error || 'none',
+    complaintsCount: complaints.length,
+    filteredCount: filteredComplaints.length,
+    selectedStatus,
+    searchQueryLength: searchQuery.length
+  });
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -364,7 +574,10 @@ useEffect(() => {
             ].map((stat, index) => (
               <motion.button
                 key={stat.label}
-                onClick={() => setSelectedStatus(stat.status)}
+                onClick={() => {
+                  debugLog('📊 Status filter clicked', { status: stat.status });
+                  setSelectedStatus(stat.status);
+                }}
                 className={`p-4 rounded-2xl border transition-all duration-300 text-left ${
                   selectedStatus === stat.status 
                     ? 'bg-white/20 border-white/30' 
@@ -386,7 +599,11 @@ useEffect(() => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const newQuery = e.target.value;
+                debugLog('🔍 Search query changed', { newQuery, length: newQuery.length });
+                setSearchQuery(newQuery);
+              }}
               placeholder={t("searchComplaintsPlaceholder")}
               className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60"
             />
@@ -404,6 +621,15 @@ useEffect(() => {
               >
                 <XCircle className="h-6 w-6 mx-auto mb-2" />
                 <p>{error}</p>
+                <button 
+                  onClick={() => {
+                    debugLog('🔄 Retry button clicked');
+                    fetchUserComplaints();
+                  }}
+                  className="mt-2 text-red-300 hover:text-red-100 underline text-sm"
+                >
+                  Retry
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -413,6 +639,7 @@ useEffect(() => {
             <div className="text-center py-8 text-white/60">
               <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
               <p>{t("loadingYourComplaints")}</p>
+              <p className="text-xs mt-2">Fetching your complaints from the server...</p>
             </div>
           )}
 
@@ -425,6 +652,14 @@ useEffect(() => {
                     const statusConfig = getStatusConfig(complaint.status);
                     const StatusIcon = statusConfig.icon;
                     const isSelected = selectedComplaint?.reportId === complaint.reportId;
+                    
+                    debugLog('📋 Rendering complaint card', {
+                      index,
+                      complaintId: complaint.reportId,
+                      title: complaint.title,
+                      status: complaint.status,
+                      isSelected
+                    });
                     
                     return (
                       <motion.div
@@ -664,6 +899,7 @@ useEffect(() => {
                         <p className="mb-4">{t("noComplaintsMatchingFilters")}</p>
                         <button 
                           onClick={() => {
+                            debugLog('🧹 Clearing filters');
                             setSearchQuery("");
                             setSelectedStatus("all");
                           }}
@@ -676,7 +912,10 @@ useEffect(() => {
                       <div>
                         <p className="mb-6">{t("noComplaintsSubmittedYet")}</p>
                         <motion.button
-                          onClick={() => navigate(`/user/${userId}/raise`)}
+                          onClick={() => {
+                            debugLog('📝 Navigating to raise complaint page');
+                            navigate(`/user/${userId}/raise`);
+                          }}
                           className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-300"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
@@ -718,7 +957,10 @@ useEffect(() => {
               <div className="flex justify-between items-start mb-6">
                 <h2 className="text-2xl font-bold text-white">{selectedComplaint.title}</h2>
                 <button 
-                  onClick={() => setDetailModalOpen(false)}
+                  onClick={() => {
+                    debugLog('❌ Closing detail modal');
+                    setDetailModalOpen(false);
+                  }}
                   className="text-white/60 hover:text-white transition-colors"
                 >
                   ✕

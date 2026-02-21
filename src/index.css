@@ -1,7 +1,7 @@
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
+/* @tailwind base; */
+/* @tailwind components; */
 @tailwind utilities;
 
 @layer utilities {
@@ -15,3 +15,6 @@
     @apply bg-white/30 w-4 h-4 border border-white shadow-[0_0_12px_rgba(255,255,255,0.5)];
   }
 }
+
+/* Import Bricolage Grotesque from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@200;300;400;500;600;700;800&display=swap');

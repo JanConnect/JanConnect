@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, LogIn, Menu, X } from "lucide-react";
+import { Sun, Moon, LogIn, Menu, X, Lock } from "lucide-react";
 
 const Header = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -121,6 +121,16 @@ const Header = () => {
               </AnimatePresence>
             </motion.button>
 
+            {/* Private Button */}
+            <motion.button
+              className="flex items-center space-x-1 px-4 py-2 rounded-xl border border-white dark:border-gray-300 text-gray-800 dark:text-white bg-transparent hover:bg-white/10 dark:hover:bg-black/10 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Lock className="h-4 w-4" />
+              <Link to="/private">Private</Link>
+            </motion.button>
+
             {/* Login Button */}
             <motion.button
               className="flex items-center space-x-1 px-4 py-2 rounded-xl border border-white dark:border-gray-300 text-gray-800 dark:text-white bg-transparent hover:bg-white/10 dark:hover:bg-black/10 transition-all duration-300"
@@ -176,6 +186,15 @@ const Header = () => {
                     <span className="text-gray-800 dark:text-white">Dark Mode</span>
                   </div>
                 )}
+              </motion.button>
+
+              {/* Private Button in Mobile Menu */}
+              <motion.button
+                className="flex items-center justify-center space-x-1 px-4 py-2 rounded-xl border border-white dark:border-gray-300 text-gray-800 dark:text-white bg-transparent hover:bg-white/10 dark:hover:bg-black/10 transition-all duration-300"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Lock className="h-4 w-4" />
+                <Link to="/private">Private</Link>
               </motion.button>
 
               {/* Login Button in Mobile Menu */}

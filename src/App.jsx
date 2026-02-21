@@ -10,6 +10,7 @@ import RaiseComplaint from "./pages/RaiseComplaint";
 import TrackComplaint from "./pages/TrackComplaint";
 import ResolvedComplaints from "./pages/ResolvedComplaints";
 import AdminDashboard from './pages/AdminDashboard';
+import Private from "./pages/private/Private"; // Import the Private component (you'll need to create this)
 // import './i18n';
 // import ComplaintDetail from "./pages/ComplaintDetail";
 
@@ -24,7 +25,8 @@ function LayoutWrapper({ children }) {
   const hideLayout =
     hiddenRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/user/") ||
-    location.pathname.startsWith("/admin/");
+    location.pathname.startsWith("/admin/") ||
+    location.pathname.startsWith("/private"); // Optionally hide for private routes too
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -37,13 +39,14 @@ function LayoutWrapper({ children }) {
 
 function App() {
   return (
-    <Router >
+    <Router>
       <LayoutWrapper>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/private/*" element={<Private />} /> {/* New Private route */}
           <Route path="/user/:userId" element={<UserPage />} />
           <Route path="/user/:userId/raise" element={<RaiseComplaint />} />
           <Route path="/user/:userId/track" element={<TrackComplaint />} />

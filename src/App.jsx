@@ -9,9 +9,9 @@ import UserPage from "./pages/UserPage";
 import RaiseComplaint from "./pages/RaiseComplaint";
 import TrackComplaint from "./pages/TrackComplaint";
 import ResolvedComplaints from "./pages/ResolvedComplaints";
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import Private from "./pages/private/Private";
-import PrivateHome from "./pages/private/privatehome"; // Import the new PrivateHome component
+import PrivateHome from "./pages/private/PrivateHome"; // Import the new PrivateHome component
 import CommunityFeedPage from "./pages/CommunityFeedPage";
 
 // import './i18n';

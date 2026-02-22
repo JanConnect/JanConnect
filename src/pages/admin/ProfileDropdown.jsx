@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { User, LogOut, ChevronDown } from 'lucide-react';
-import { safeRender } from '../../utils/helpers';
+import { safeRender } from '../utils/helpers';
 
 const ProfileDropdown = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);

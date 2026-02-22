@@ -30,10 +30,20 @@ export const getReportsAnalytics = (params = {}) => {
 };
 
 // Update report status with optional resolution image (Staff/Admin only)
-export const updateReportStatus = (reportId, formData) => {
-    return api.patch(`/reports/${reportId}/status`, formData, {
+export const updateReportStatus = (reportId, data) => {
+    // Use the correct endpoint: /status/json
+    return api.patch(`/reports/${reportId}/status/json`, data, {
         headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
+        },
+    });
+};
+
+// Add this to your report.js API file
+export const updateReportStatusJson = (reportId, data) => {
+    return api.patch(`/reports/${reportId}/status/json`, data, {
+        headers: {
+            'Content-Type': 'application/json',
         },
     });
 };

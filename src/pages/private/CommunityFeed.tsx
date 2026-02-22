@@ -49,9 +49,18 @@ const CommunityFeed = () => {
   return (
     <section 
       ref={ref} 
-      className="py-32 px-6 md:px-12 lg:px-24 bg-[#F8F8F8] overflow-hidden"
+      className="py-32 px-6 md:px-12 lg:px-24 relative overflow-hidden"
+      style={{
+        backgroundImage: `url('/images/cf-bg3.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }}
     >
-      <div className="mx-auto max-w-7xl" ref={containerRef}>
+      {/* No overlay - background shows naturally */}
+      
+      <div className="mx-auto max-w-7xl relative z-10" ref={containerRef}>
         {/* Header */}
         <motion.div
           className="text-center max-w-2xl mx-auto mb-20"
@@ -66,23 +75,25 @@ const CommunityFeed = () => {
             COMMUNITY VOICES
           </span>
           <h2 
-            className="text-gray-900"
+            className="text-white" // Changed to white for better contrast
             style={{ 
               fontFamily: 'Montserrat, sans-serif',
               fontSize: '3.5rem',
               fontWeight: 800,
               letterSpacing: '-0.03em',
-              lineHeight: 1.2
+              lineHeight: 1.2,
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)' // Added text shadow
             }}
           >
             Community Pulse
           </h2>
           <p 
-            className="mt-4 text-lg text-gray-600"
+            className="mt-4 text-lg text-white/90" // Changed to white with opacity
             style={{ 
               fontFamily: 'Roboto, sans-serif',
               fontWeight: 300,
-              lineHeight: 1.7
+              lineHeight: 1.7,
+              textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
             }}
           >
             Real stories and updates from residents like you
@@ -93,7 +104,7 @@ const CommunityFeed = () => {
         <div className="relative">
           {/* Vertical Path Line */}
           <motion.div 
-            className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-blue-600/20 via-blue-600/40 to-emerald-600/20"
+            className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-blue-400/40 via-blue-400/60 to-emerald-400/40"
             initial={{ height: 0 }}
             animate={isInView ? { height: "100%" } : {}}
             transition={{ duration: 2, ease: "easeInOut" }}
@@ -119,11 +130,11 @@ const CommunityFeed = () => {
               >
                 {/* Branch Node */}
                 <div className="relative">
-                  <div className="w-4 h-4 bg-blue-600 rounded-full shadow-lg shadow-blue-600/30" />
+                  <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50" />
                   
                   {/* Left Branch */}
                   <motion.div 
-                    className="absolute top-1/2 right-full w-16 h-0.5 bg-gradient-to-l from-blue-600/60 to-transparent"
+                    className="absolute top-1/2 right-full w-16 h-0.5 bg-gradient-to-l from-blue-500/60 to-transparent"
                     initial={{ width: 0, opacity: 0 }}
                     animate={isInView ? { width: 64, opacity: 1 } : {}}
                     transition={{ duration: 0.5, delay: 1 + index * 0.2 }}
@@ -131,7 +142,7 @@ const CommunityFeed = () => {
                   
                   {/* Right Branch */}
                   <motion.div 
-                    className="absolute top-1/2 left-full w-16 h-0.5 bg-gradient-to-r from-blue-600/60 to-transparent"
+                    className="absolute top-1/2 left-full w-16 h-0.5 bg-gradient-to-r from-blue-500/60 to-transparent"
                     initial={{ width: 0, opacity: 0 }}
                     animate={isInView ? { width: 64, opacity: 1 } : {}}
                     transition={{ duration: 0.5, delay: 1 + index * 0.2 }}
@@ -159,24 +170,24 @@ const CommunityFeed = () => {
               >
                 {/* Connecting Line to Branch */}
                 <motion.div 
-                  className={`absolute top-1/2 ${post.side === 'left' ? 'right-full' : 'left-full'} w-16 h-0.5 bg-gradient-to-${post.side === 'left' ? 'l' : 'r'} from-blue-600/40 to-transparent`}
+                  className={`absolute top-1/2 ${post.side === 'left' ? 'right-full' : 'left-full'} w-16 h-0.5 bg-gradient-to-${post.side === 'left' ? 'l' : 'r'} from-blue-500/40 to-transparent`}
                   initial={{ width: 0, opacity: 0 }}
                   whileInView={{ width: 64, opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.3 + index * 0.2 }}
                 />
 
-                {/* Comment Card - Wider and More Horizontal */}
+                {/* Comment Card - Solid white for readability */}
                 <motion.article
-                  className={`w-[600px] bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all duration-300 ${
+                  className={`w-[600px] bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 ${
                     post.side === 'left' ? 'ml-12' : 'mr-12'
                   }`}
                   whileHover={{ 
                     scale: 1.01,
-                    boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.3)"
+                    boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.4)"
                   }}
                 >
-                  {/* Author Info - More Compact */}
+                  {/* Author Info */}
                   <div className="flex items-center gap-3">
                     <motion.div 
                       className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center text-white font-bold text-sm"
@@ -305,7 +316,7 @@ const CommunityFeed = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="w-24 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+          <div className="w-24 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
         </motion.div>
       </div>
     </section>

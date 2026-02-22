@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, BarChart3 } from 'lucide-react';
-import { generateDepartmentAnalytics } from '../../utils/mockData';
+import { generateDepartmentAnalytics } from '../utils/mockData';
 
 const PerformanceAnalyticsModal = ({ 
   isOpen, 

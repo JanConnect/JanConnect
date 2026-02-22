@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Edit3, RefreshCw, User, Phone, MessageCircle } from 'lucide-react';
-import { safeRender } from '../../utils/helpers';
+import { safeRender } from '../utils/helpers';
 import LocationDisplay from './LocationDisplay';
 import MediaGallery from './MediaGallery';
 import Timeline from './Timeline';
@@ -21,12 +21,37 @@ const ComplaintDetailView = ({
   const [newStatus, setNewStatus] = useState(complaint.status);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
+  const [localComplaint, setLocalComplaint] = useState(complaint);
 
   const handleStatusUpdate = async () => {
-    if (newStatus !== complaint.status) {
+    if (newStatus !== localComplaint.status) {
       setIsUpdating(true);
       try {
-        await onStatusUpdate(complaint._id, newStatus);
+        // Call the parent's onStatusUpdate with the complaint ID and new status
+        const updatedData = await onStatusUpdate(localComplaint._id, newStatus);
+        
+        // Create a new timeline entry for the status change
+        const newTimelineEntry = {
+          id: Date.now().toString(),
+          type: 'status_change',
+          status: newStatus,
+          message: `Status changed to ${newStatus}`,
+          date: new Date().toISOString(),
+          updatedBy: { name: 'Admin' }
+        };
+        
+        // Update local state with new status and timeline entry
+        setLocalComplaint(prev => ({
+          ...prev,
+          status: newStatus,
+          updates: [...(prev.updates || []), newTimelineEntry]
+        }));
+        
+        // Reset the newStatus to match the updated status
+        setNewStatus(newStatus);
+        
+      } catch (error) {
+        console.error('Error updating status:', error);
       } finally {
         setIsUpdating(false);
       }
@@ -36,7 +61,26 @@ const ComplaintDetailView = ({
   const handleAddComment = async (commentData) => {
     setIsAddingComment(true);
     try {
-      await onAddComment(complaint._id, commentData);
+      const newComment = await onAddComment(localComplaint._id, commentData);
+      
+      // Create a new timeline entry for the comment
+      const newCommentEntry = {
+        id: newComment?.id || Date.now().toString(),
+        type: 'comment',
+        message: commentData.message,
+        date: new Date().toISOString(),
+        updatedBy: { name: 'Admin' },
+        media: commentData.media
+      };
+      
+      // Update local state with new comment
+      setLocalComplaint(prev => ({
+        ...prev,
+        updates: [...(prev.updates || []), newCommentEntry]
+      }));
+      
+    } catch (error) {
+      console.error('Error adding comment:', error);
     } finally {
       setIsAddingComment(false);
     }
@@ -48,6 +92,9 @@ const ComplaintDetailView = ({
     { value: 'resolved', label: 'Resolved' },
     { value: 'rejected', label: 'Rejected' }
   ];
+
+  // Use localComplaint for rendering to show updates immediately
+  const displayComplaint = localComplaint;
 
   return (
     <motion.div
@@ -77,39 +124,49 @@ const ComplaintDetailView = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-2xl font-bold text-white mb-4">{safeRender(complaint.title, 'Untitled Report')}</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">{safeRender(displayComplaint.title, 'Untitled Report')}</h2>
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <span className="text-white/60 text-sm">Report ID:</span>
-                <p className="text-white">{safeRender(complaint.reportId, 'N/A')}</p>
+                <p className="text-white">{safeRender(displayComplaint.reportId, 'N/A')}</p>
               </div>
               <div>
                 <span className="text-white/60 text-sm">Category:</span>
-                <p className="text-white">{safeRender(complaint.category, 'Unknown')}</p>
+                <p className="text-white">{safeRender(displayComplaint.category, 'Unknown')}</p>
               </div>
               <div>
                 <span className="text-white/60 text-sm">Status:</span>
-                <p className="text-white capitalize">{safeRender(complaint.status, 'Unknown')}</p>
+                <p className={`text-white capitalize font-semibold ${
+                  displayComplaint.status === 'resolved' ? 'text-green-400' :
+                  displayComplaint.status === 'rejected' ? 'text-red-400' :
+                  displayComplaint.status === 'in-progress' ? 'text-blue-400' :
+                  'text-yellow-400'
+                }`}>
+                  {safeRender(displayComplaint.status, 'Unknown')}
+                </p>
               </div>
               <div>
                 <span className="text-white/60 text-sm">Priority:</span>
-                <p className="text-white">{safeRender(complaint.priority || complaint.urgency, 'Unknown')}</p>
+                <p className="text-white">{safeRender(displayComplaint.priority || displayComplaint.urgency, 'Unknown')}</p>
               </div>
             </div>
             
             <div className="mb-4">
               <span className="text-white/60 text-sm">Description:</span>
-              <p className="text-white mt-2">{safeRender(complaint.description, 'No description available')}</p>
+              <p className="text-white mt-2">{safeRender(displayComplaint.description, 'No description available')}</p>
             </div>
           </motion.div>
 
           {/* Location Section with Google Maps */}
-          <LocationDisplay location={complaint.location} />
+          <LocationDisplay location={displayComplaint.location} />
 
           {/* Media Gallery */}
-          <MediaGallery media={complaint.media} />
-
+          <MediaGallery 
+            image={displayComplaint.image} 
+            voiceMessage={displayComplaint.voiceMessage} 
+          />
+          
           {/* Timeline */}
           <motion.div
             className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
@@ -118,7 +175,10 @@ const ComplaintDetailView = ({
             transition={{ delay: 0.2 }}
           >
             <h2 className="text-xl font-semibold text-white mb-4">Timeline</h2>
-            <Timeline events={complaint.updates} />
+            <Timeline 
+              events={displayComplaint.updates || displayComplaint.comments || []} 
+              complaint={displayComplaint}
+            />
           </motion.div>
 
           {/* Add Comment Section */}
@@ -152,15 +212,15 @@ const ComplaintDetailView = ({
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">{safeRender(complaint.reportedBy?.name, 'Anonymous')}</p>
-                  <p className="text-white/60 text-sm">{safeRender(complaint.reportedBy?.email, 'No email')}</p>
+                  <p className="text-white font-medium">{safeRender(displayComplaint.reportedBy?.name, 'Anonymous')}</p>
+                  <p className="text-white/60 text-sm">{safeRender(displayComplaint.reportedBy?.email, 'No email')}</p>
                 </div>
               </div>
               
-              {complaint.reportedBy?.phone && (
+              {displayComplaint.reportedBy?.phone && (
                 <div className="flex items-center gap-2 text-white/70">
                   <Phone className="h-4 w-4" />
-                  <span>{complaint.reportedBy.phone}</span>
+                  <span>{displayComplaint.reportedBy.phone}</span>
                 </div>
               )}
             </div>
@@ -190,7 +250,7 @@ const ComplaintDetailView = ({
               
               <button
                 onClick={handleStatusUpdate}
-                disabled={newStatus === complaint.status || isUpdating}
+                disabled={newStatus === displayComplaint.status || isUpdating}
                 className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-lg text-white font-medium transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isUpdating ? (
@@ -212,7 +272,7 @@ const ComplaintDetailView = ({
           >
             <h3 className="text-lg font-semibold text-white mb-4">Department Management</h3>
             <DepartmentAssignment
-              complaint={complaint}
+              complaint={displayComplaint}
               departments={departments}
               onAssign={onAssign}
               onUnassign={onUnassign}

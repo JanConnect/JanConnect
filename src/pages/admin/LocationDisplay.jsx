@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import GoogleMapView from '../GoogleMapView';
-import { extractCoordinates } from '../../utils/helpers';
+import { extractCoordinates } from '../utils/helpers';
 
 const LocationDisplay = ({ location }) => {
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-import { PRIORITIES, STATUS_OPTIONS } from '../../utils/constants';
+import { PRIORITIES, STATUS_OPTIONS } from '../utils/constant';
 
 const FilterBar = ({ filters, onFilterChange, categories = [], municipalities = [] }) => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);

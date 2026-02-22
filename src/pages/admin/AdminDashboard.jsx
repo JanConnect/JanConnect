@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 // Custom hooks
-import { useDashboardData } from '../../hooks/useDashboardData';
+import { useDashboardData } from '../hooks/useDashboardData';
 
 // Components
 import ProfileDropdown from './ProfileDropdown';
@@ -20,7 +20,7 @@ import DepartmentManagementModal from './DepartmentManagementModal';
 import PerformanceAnalyticsModal from './PerformanceAnalyticsModal';
 
 // Utils
-import { convertToCSV, downloadCSV } from '../../utils/helpers';
+import { convertToCSV, downloadCSV } from '../utils/helpers';
 import Pagination from '../Pagination';
 import ScrollHeatmap from '../../pages/ScrollHeatmap';
 

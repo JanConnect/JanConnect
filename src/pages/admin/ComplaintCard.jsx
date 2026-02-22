@@ -5,7 +5,7 @@ import {
   AlertTriangle, AlertCircle, FileText, MapPin, 
   MessageSquare, ArrowBigUp 
 } from 'lucide-react';
-import { safeRender, getUpvoteCount, getUpdatesCount } from '../../utils/helpers';
+import { safeRender, getUpvoteCount, getUpdatesCount } from '../utils/helpers';
 
 // Info icon component
 const Info = ({ className }) => (

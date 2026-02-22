@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { MapPin, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 
 const societies = [
@@ -16,22 +17,34 @@ const SocietySelection = () => {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { ref, isInView } = useScrollAnimation();
+  const navigate = useNavigate();
 
   const filtered = societies.filter((s) =>
     s.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleSocietySelect = (society: string) => {
+    setSearch(society);
+    setIsOpen(false);
+  };
+
+  const handleContinue = () => {
+    if (search && societies.includes(search)) {
+      navigate(`/privatehome?society=${encodeURIComponent(search)}`);
+    }
+  };
+
   return (
     <section 
       ref={ref} 
-      className="pt-32 pb-24 px-6 md:px-12 lg:px-24 bg-white"
+      className="pt-32 pb-24 px-6 md:px-12 lg:px-24 bg-white min-h-screen"
     >
       <div className="mx-auto max-w-xl text-center">
         <motion.h2
-          className="text-gray-900 whitespace-nowrap"
+          className="text-gray-900"
           style={{ 
             fontFamily: 'Montserrat, sans-serif',
-            fontSize: '3.5rem',
+            fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
             fontWeight: 600,
             letterSpacing: '-0.03em',
             lineHeight: 1.2
@@ -101,7 +114,7 @@ const SocietySelection = () => {
           {/* Dropdown */}
           {isOpen && search.length > 0 && (
             <motion.div
-              className="absolute left-0 right-0 top-full z-20 mt-3 rounded-xl bg-white py-3 shadow-xl border border-gray-200"
+              className="absolute left-0 right-0 top-full z-20 mt-3 rounded-xl bg-white py-3 shadow-xl border border-gray-200 max-h-80 overflow-y-auto"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
@@ -114,10 +127,7 @@ const SocietySelection = () => {
                     fontFamily: 'Roboto, sans-serif',
                     fontWeight: 300
                   }}
-                  onClick={() => {
-                    setSearch(society);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleSocietySelect(society)}
                 >
                   {society}
                 </button>
@@ -151,7 +161,9 @@ const SocietySelection = () => {
               scale: 1.02
             }}
             whileTap={{ scale: 0.98 }}
-            className="relative group"
+            onClick={handleContinue}
+            disabled={!search || !societies.includes(search)}
+            className={`relative group ${(!search || !societies.includes(search)) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {/* Gradient glow effect */}
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full opacity-70 group-hover:opacity-100 blur transition duration-300" />

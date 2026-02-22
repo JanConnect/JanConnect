@@ -10,7 +10,10 @@ import RaiseComplaint from "./pages/RaiseComplaint";
 import TrackComplaint from "./pages/TrackComplaint";
 import ResolvedComplaints from "./pages/ResolvedComplaints";
 import AdminDashboard from './pages/AdminDashboard';
-import Private from "./pages/private/Private"; // Import the Private component (you'll need to create this)
+import Private from "./pages/private/Private";
+import PrivateHome from "./pages/private/privatehome"; // Import the new PrivateHome component
+import CommunityFeedPage from "./pages/CommunityFeedPage";
+
 // import './i18n';
 // import ComplaintDetail from "./pages/ComplaintDetail";
 
@@ -46,12 +49,18 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/private/*" element={<Private />} /> {/* New Private route */}
+          
+          {/* Private routes - note the order matters! */}
+          <Route path="/private" element={<Private />} />
+          <Route path="/privatehome" element={<PrivateHome />} /> {/* Add this new route */}
+          
           <Route path="/user/:userId" element={<UserPage />} />
           <Route path="/user/:userId/raise" element={<RaiseComplaint />} />
           <Route path="/user/:userId/track" element={<TrackComplaint />} />
           <Route path="/user/:userId/resolved" element={<ResolvedComplaints />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/user/:userId/community" element={<CommunityFeedPage />} />
+          <Route path="/community" element={<CommunityFeedPage />} />
           {/* <Route path="/complaint/:complaintId" element={<ComplaintDetail />} /> */}
         </Routes>
       </LayoutWrapper>

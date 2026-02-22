@@ -15,6 +15,7 @@ import { multilingualReportsData } from "../data/multilingualComplaints";
 import Chatbot from "./ChatBot";
 import {AnalyticsChartsSection,DepartmentPerformanceChart,ReportsTimelineChart,CustomBarTooltip,CustomLineTooltip} from "../pages/Charts";
 import TrendingComplaints from "../pages/TrendingComplaints";
+import CommunityCard from "./CommunityCard";
 export default function UserPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -761,6 +762,8 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      <CommunityCard userId={user._id} />
 
       {/* Main Content Area - Globe on left, Trending complaints on right */}
       <div className="flex-1 flex flex-col lg:flex-row mt-20 p-4 relative z-10 gap-6">

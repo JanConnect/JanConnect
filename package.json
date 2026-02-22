@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "lint": "eslint .",
-  "preview": "vite preview",
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@googlemaps/react-wrapper": "^1.2.0",
@@ -21,6 +21,9 @@
     "@vis.gl/react-google-maps": "^1.5.5",
     "axios": "^1.11.0",
     "exifreader": "^4.31.2",
+    "expo-av": "^16.0.8",
+    "expo-blur": "^15.0.8",
+    "expo-haptics": "^15.0.8",
     "framer-motion": "^12.23.12",
     "gsap": "^3.13.0",
     "i18next": "^25.5.2",
@@ -28,8 +31,8 @@
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.542.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-google-autocomplete": "^2.7.5",
     "react-i18next": "^15.7.3",
     "react-intersection-observer": "^9.16.0",
@@ -38,7 +41,8 @@
     "react-router-dom": "^7.8.2",
     "recharts": "^3.1.2",
     "swiper": "^11.2.10",
-    "three": "^0.179.1"
+    "three": "^0.179.1",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

@@ -559,9 +559,9 @@ export default function TrackComplaint() {
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Quick Stats - No underline, larger font when selected */}
           <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -578,23 +578,26 @@ export default function TrackComplaint() {
                   debugLog('📊 Status filter clicked', { status: stat.status });
                   setSelectedStatus(stat.status);
                 }}
-                className={`p-4 rounded-2xl border transition-all duration-300 text-left ${
-                  selectedStatus === stat.status 
-                    ? 'bg-white/20 border-white/30' 
-                    : 'bg-white/10 border-white/20 hover:bg-white/15'
-                }`}
+                className="text-left transition-all duration-200"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
               >
-                <div className="text-2xl font-bold text-white">{stat.count}</div>
-                <div className="text-sm text-white/70">{stat.label}</div>
+                <div className={`font-bold text-white transition-all duration-200 ${
+                  selectedStatus === stat.status ? 'text-3xl' : 'text-2xl'
+                }`}>
+                  {stat.count}
+                </div>
+                <div className={`text-sm transition-all duration-200 ${
+                  selectedStatus === stat.status ? 'font-extrabold text-white' : 'font-bold text-white/70'
+                }`}>
+                  {stat.label}
+                </div>
               </motion.button>
             ))}
           </motion.div>
 
-          {/* Search Bar */}
+          {/* Search Bar - Single bottom line only */}
           <div className="relative mb-6">
             <input
               type="text"
@@ -605,9 +608,9 @@ export default function TrackComplaint() {
                 setSearchQuery(newQuery);
               }}
               placeholder={t("searchComplaintsPlaceholder")}
-              className="w-full pl-10 pr-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 text-white focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none transition-all duration-200 placeholder:text-white/60"
+              className="w-full pl-10 pr-4 py-3 bg-transparent border-b border-white/20 text-white focus:border-indigo-400 focus:outline-none transition-all duration-200 placeholder:text-white/60"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
+            <Search className="absolute left-0 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
           </div>
 
           {/* Error State */}

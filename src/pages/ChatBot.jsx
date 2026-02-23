@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { GoogleGenAI } from "@google/genai";
 
@@ -18,17 +18,18 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState('checking');
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Initialize Google GenAI with API key
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
   // Available models - using the correct ones from your example
-const AVAILABLE_MODELS = [
-  "gemini-2.0-flash",        // Stable free model ✅
-  "gemini-2.0-pro",          // More powerful
-  "gemini-3-flash-preview",  // New preview model
-];
+  const AVAILABLE_MODELS = [
+    "gemini-2.0-flash",        // Stable free model ✅
+    "gemini-2.0-pro",          // More powerful
+    "gemini-3-flash-preview",  // New preview model
+  ];
 
   // Enhanced FAQ data with multilingual support
   const faqData = [
@@ -138,12 +139,17 @@ const AVAILABLE_MODELS = [
     t('chatbot.suggestions.community', "See community reports?")
   ];
 
-  // Display only 3 questions initially, more when expanded
-  const visibleSuggestions = showMoreQuestions ? quickSuggestions : quickSuggestions.slice(0, 2);
+  // Display only 3 questions initially
+  const visibleSuggestions = showMoreQuestions ? quickSuggestions : quickSuggestions.slice(0, 3);
 
-  // Scroll to bottom of messages
+  // Scroll to bottom of messages with smooth animation
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
@@ -167,12 +173,12 @@ const AVAILABLE_MODELS = [
     try {
       // Try to make a simple request using the SDK
       const response = await ai.models.generateContent({
-  model: "gemini-2.0-flash",  // Use a known working model
-  contents: "Respond with just the word 'OK' if you can hear me.",
-  config: {
-    maxOutputTokens: 10,
-  },
-});
+        model: "gemini-2.0-flash",  // Use a known working model
+        contents: "Respond with just the word 'OK' if you can hear me.",
+        config: {
+          maxOutputTokens: 10,
+        },
+      });
       if (response && response.text) {
         console.log("✅ Gemini connected successfully!", response.text);
         setGeminiStatus('connected');
@@ -303,6 +309,58 @@ const AVAILABLE_MODELS = [
     }
   };
 
+  // Handle sending a suggestion directly without input
+  const sendSuggestionMessage = async (suggestion) => {
+    if (isLoading) return;
+    
+    // Add user message
+    const newUserMessage = {
+      id: messages.length + 1,
+      text: suggestion,
+      sender: 'user'
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    setIsLoading(true);
+
+    try {
+      // First check if it matches FAQ
+      const faqAnswer = checkFAQMatch(suggestion.toLowerCase());
+      
+      let botResponseText;
+      
+      if (faqAnswer) {
+        // Use predefined FAQ answer
+        botResponseText = faqAnswer;
+        console.log("Using FAQ response");
+      } else {
+        // Use Gemini API for other questions
+        console.log("Using Gemini for response");
+        botResponseText = await getGeminiResponse(suggestion);
+      }
+
+      const botResponse = {
+        id: messages.length + 2,
+        text: botResponseText,
+        sender: 'bot'
+      };
+      
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error("Error getting response:", error);
+      
+      // Fallback response
+      const errorResponse = {
+        id: messages.length + 2,
+        text: "I'm having trouble responding right now. Please try again or check our FAQ for common questions!",
+        sender: 'bot'
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle key press (Enter to send)
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !isLoading) {
@@ -311,208 +369,278 @@ const AVAILABLE_MODELS = [
   };
 
   const handleSuggestionClick = (suggestion) => {
-    setInputValue(suggestion);
-    setTimeout(() => {
-      handleSendMessage();
-    }, 100);
+    sendSuggestionMessage(suggestion);
   };
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-      {/* Chatbot Button */}
-      {!isOpen && (
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
-          aria-label={t('chatbot.openButton', 'Open chat')}
-        >
-          <svg 
-            className="w-6 h-6 sm:w-7 sm:h-7 text-white" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24" 
-            xmlns="http://www.w3.org/2000/svg"
+      {/* Chatbot Button - Circular like WhatsApp */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={() => setIsOpen(true)}
+            className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-[#4F46E5] rounded-full shadow-lg hover:bg-[#4338CA] transition-all duration-300 hover:scale-110 active:scale-95"
+            aria-label={t('chatbot.openButton', 'Open chat')}
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth="2" 
-              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-            ></path>
-          </svg>
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 sm:h-5 sm:w-5 bg-green-500"></span>
-          </span>
-        </motion.button>
-      )}
+            <svg 
+              className="w-6 h-6 sm:w-7 sm:h-7 text-white" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth="2" 
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              ></path>
+            </svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Chat Window */}
-      {isOpen && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 20 }}
-          transition={{ duration: 0.3 }}
-          className="w-[calc(100vw-2rem)] sm:w-96 h-[80vh] sm:h-[520px] max-h-[600px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-xl flex flex-col border border-gray-700 overflow-hidden"
-          style={{
-            maxWidth: 'calc(100vw - 2rem)',
-            margin: '0 auto'
-          }}
-        >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 sm:p-4 rounded-t-2xl flex justify-between items-center">
-            <div className="flex items-center">
-              <div className="bg-white/20 p-1.5 sm:p-2 rounded-xl mr-2 sm:mr-3">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ 
+              duration: 0.3,
+              type: "spring",
+              stiffness: 400,
+              damping: 30
+            }}
+            className="w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden"
+            style={{
+              maxWidth: 'calc(100vw - 2rem)',
+              margin: '0 auto',
+              height: '600px',
+              maxHeight: '80vh'
+            }}
+          >
+            {/* Header - Solid Indigo */}
+            <div className="bg-[#4F46E5] text-white p-4 flex justify-between items-center flex-shrink-0">
+              <div className="flex items-center">
+                <div>
+                  <h3 className="font-semibold text-base">JanBot Assistant</h3>
+                  <p className="text-xs text-indigo-100">Here to help with civic issues</p>
+                </div>
+              </div>
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsOpen(false)}
+                className="text-white hover:text-indigo-200 transition-colors p-1"
+                aria-label={t('chatbot.closeButton', 'Close chat')}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
-              </div>
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg">{t('chatbot.title', 'JanBot Assistant')}</h3>
-                <p className="text-xs opacity-80 flex items-center">
-                  {t('chatbot.subtitle', 'Here to help with civic issues')}
-                  {/* Status Indicator */}
-                  <span className="ml-2 inline-flex items-center">
-                    {geminiStatus === 'checking' && (
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse mr-1"></span>
-                        <span className="text-[10px]">Connecting...</span>
-                      </span>
-                    )}
-                    {geminiStatus === 'connected' && (
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                        <span className="text-[10px]">AI Ready</span>
-                      </span>
-                    )}
-                    {geminiStatus === 'error' && (
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-red-400 rounded-full mr-1"></span>
-                        <span className="text-[10px]">Using FAQ only</span>
-                      </span>
-                    )}
-                  </span>
-                </p>
-              </div>
+              </motion.button>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
-              aria-label={t('chatbot.closeButton', 'Close chat')}
+
+            {/* Messages Container - Fixed height with scroll */}
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 p-4 overflow-y-auto bg-white"
+              style={{
+                scrollBehavior: 'smooth',
+                height: '100%',
+                maxHeight: 'calc(600px - 180px)'
+              }}
             >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-
-          {/* Messages Container */}
-          <div className="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-800/30">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex mb-3 sm:mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] sm:max-w-xs p-3 sm:p-4 rounded-2xl text-sm sm:text-base ${
-                    message.sender === 'user'
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                      : 'bg-gray-700 text-gray-100 border border-gray-600'
-                  }`}
+              <AnimatePresence initial={false}>
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.3,
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 30
+                    }}
+                    className={`flex mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.sender === 'bot' && (
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="max-w-[90%] p-3 rounded-lg text-sm text-gray-800"
+                        style={{ 
+                          backgroundColor: '#F3F4F6',
+                          borderBottomLeftRadius: '4px'
+                        }}
+                      >
+                        {message.text}
+                      </motion.div>
+                    )}
+                    {message.sender === 'user' && (
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="max-w-[90%] p-3 rounded-lg text-sm text-white"
+                        style={{ 
+                          backgroundColor: '#4F46E5',
+                          borderBottomRightRadius: '4px'
+                        }}
+                      >
+                        {message.text}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start mb-4"
                 >
-                  {message.text}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start mb-3 sm:mb-4">
-                <div className="bg-gray-700 text-gray-100 border border-gray-600 p-3 sm:p-4 rounded-2xl">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Suggestions */}
-          <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-700 border-t border-gray-600">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs sm:text-sm text-gray-400">{t('chatbot.quickQuestions', 'Quick questions:')}</p>
-              <button 
-                onClick={() => setShowMoreQuestions(!showMoreQuestions)}
-                className="text-xs sm:text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center"
-              >
-                {showMoreQuestions ? (
-                  <>
-                    <span>{t('chatbot.showLess', 'Show less')}</span>
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-                    </svg>
-                  </>
-                ) : (
-                  <>
-                    <span>{t('chatbot.showMore', 'Show more')}</span>
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </>
-                )}
-              </button>
+                  <motion.div 
+                    animate={{ scale: [1, 1.02, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="bg-gray-100 p-3 rounded-lg rounded-bl-md"
+                  >
+                    <div className="flex items-center space-x-1">
+                      <motion.div
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                      />
+                      <motion.div
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                      />
+                      <motion.div
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                      />
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {visibleSuggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
+
+            {/* Quick Suggestions */}
+            <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">SUGGESTIONS</span>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowMoreQuestions(!showMoreQuestions)}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors flex items-center"
+                >
+                  {showMoreQuestions ? 'Less' : 'More'}
+                  <motion.svg 
+                    animate={{ rotate: showMoreQuestions ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-3 h-3 ml-1" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </motion.svg>
+                </motion.button>
+              </div>
+              <motion.div 
+                layout
+                className="flex flex-wrap gap-2"
+              >
+                <AnimatePresence>
+                  {visibleSuggestions.map((suggestion, index) => (
+                    <motion.button
+                      key={suggestion}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2, delay: index * 0.05 }}
+                      whileHover={{ scale: 1.05, backgroundColor: '#E5E7EB' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      disabled={isLoading}
+                      className="px-3 py-1.5 text-xs bg-gray-100 border border-gray-200 rounded-full hover:bg-gray-200 transition-colors text-gray-700 disabled:opacity-50"
+                    >
+                      {suggestion}
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4 border-t border-gray-200 flex-shrink-0">
+              <div className="flex items-center bg-gray-100 rounded-lg">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   disabled={isLoading}
-                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-gray-600 border border-gray-500 rounded-xl hover:bg-gray-500 transition-colors text-gray-200 break-words max-w-[48%] sm:max-w-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ wordBreak: 'break-word' }}
+                  placeholder="Ask something..."
+                  className="flex-1 px-4 py-2 text-sm bg-transparent rounded-lg focus:outline-none text-gray-800 placeholder-gray-400 disabled:opacity-50"
+                />
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSendMessage}
+                  disabled={inputValue.trim() === '' || isLoading}
+                  className="p-2 text-white bg-[#4F46E5] rounded-lg hover:bg-[#4338CA] disabled:opacity-50 transition-colors mr-1"
+                  aria-label={t('chatbot.sendButton', 'Send message')}
                 >
-                  {suggestion}
-                </button>
-              ))}
+                  {isLoading ? (
+                    <motion.svg 
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      className="w-5 h-5" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </motion.svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
+                </motion.button>
+              </div>
             </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Input Area */}
-          <div className="p-3 sm:p-4 bg-gray-700 border-t border-gray-600 rounded-b-2xl">
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isLoading}
-                placeholder={t('chatbot.placeholder', 'Ask JanBot about reporting issues...')}
-                className="flex-1 px-3 py-2 sm:px-4 sm:py-3 text-sm bg-gray-600 border border-gray-500 rounded-2xl rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder-gray-400 disabled:opacity-50"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={inputValue.trim() === '' || isLoading}
-                className="px-3 py-2 sm:px-4 sm:py-3 text-white bg-indigo-600 rounded-2xl rounded-l-none hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                aria-label={t('chatbot.sendButton', 'Send message')}
-              >
-                {isLoading ? (
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      <style jsx>{`
+        /* Custom scrollbar for the messages container */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 6px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #a1a1a1;
+        }
+      `}</style>
     </div>
   );
 };

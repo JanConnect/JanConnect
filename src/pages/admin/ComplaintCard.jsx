@@ -60,7 +60,8 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
           {/* <div className="min-w-0"> */}
             <h3 className="font-semibold text-white text-lg mb-1">
               {safeRender(complaint.title, 'Untitled Report')}
-            </h3>         
+            </h3>    
+                 
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1 px-2 py-1 text-s font-medium text-indigo-300 ">
                 <FileText className="h-3 w-3" />

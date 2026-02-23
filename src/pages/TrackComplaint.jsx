@@ -808,29 +808,48 @@ export default function TrackComplaint() {
                                         </div>
                                         
                                         {/* Actual updates */}
-                                        {complaint.updates && complaint.updates.map((update, updateIndex) => (
-                                          <div key={updateIndex} className="flex gap-3">
-                                            <div className="flex flex-col items-center">
-                                              <div className={`w-2 h-2 rounded-full ${
-                                                updateIndex === complaint.updates.length - 1 
-                                                  ? complaint.status === 'resolved' 
-                                                    ? 'bg-green-400' 
-                                                    : 'bg-blue-400'
-                                                  : 'bg-blue-400'
-                                              }`}></div>
-                                              {updateIndex < complaint.updates.length - 1 && (
-                                                <div className="w-0.5 h-8 bg-blue-400/30 mt-1"></div>
-                                              )}
-                                            </div>
-                                            <div className="flex-1">
-                                              <p className="text-white/90 text-sm">{update.message}</p>
-                                              <p className="text-white/50 text-xs mt-1 flex items-center gap-1">
-                                                <Calendar size={10} />
-                                                {formatDate(update.date)}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        ))}
+                                        {/* In the timeline section of expanded details */}
+{complaint.updates && complaint.updates.map((update, updateIndex) => (
+  <div key={updateIndex} className="flex gap-3">
+    <div className="flex flex-col items-center">
+      <div className={`w-2 h-2 rounded-full ${
+        updateIndex === complaint.updates.length - 1 
+          ? complaint.status === 'resolved' 
+            ? 'bg-green-400' 
+            : 'bg-blue-400'
+          : 'bg-blue-400'
+      }`}></div>
+      {updateIndex < complaint.updates.length - 1 && (
+        <div className="w-0.5 h-8 bg-blue-400/30 mt-1"></div>
+      )}
+    </div>
+    <div className="flex-1">
+      <p className="text-white/90 text-sm">{update.message}</p>
+      <p className="text-white/50 text-xs mt-1 flex items-center gap-1">
+        <Calendar size={10} />
+        {formatDate(update.date)}
+      </p>
+      
+      {/* ADD THIS: Display update images */}
+      {update.media && update.media.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {update.media.map((mediaUrl, mediaIdx) => (
+            <img 
+              key={mediaIdx}
+              src={mediaUrl}
+              alt="Update evidence"
+              className="h-16 w-16 object-cover rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                openImageModal(mediaUrl, "Update Evidence");
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+))}
                                         
                                         {/* Show "No updates yet" if no updates */}
                                         {(!complaint.updates || complaint.updates.length === 0) && (
@@ -1052,21 +1071,52 @@ export default function TrackComplaint() {
                   </div>
                   
                   {/* Updates */}
-                  {selectedComplaint.updates && selectedComplaint.updates.map((update, index) => (
-                    <div key={index} className="flex">
-                      <div className="flex flex-col items-center mr-4">
-                        <div className="w-3 h-3 bg-indigo-400 rounded-full"></div>
-                        {index < selectedComplaint.updates.length - 1 && (
-                          <div className="w-0.5 h-12 bg-indigo-400/30 mt-1"></div>
-                        )}
-                      </div>
-                      <div className="pb-4">
-                        <p className="text-white font-medium">{update.message}</p>
-                        <p className="text-white/60 text-sm">{formatDetailDate(update.date)}</p>
-                      </div>
-                    </div>
-                  ))}
-                  
+{/* In the detail modal timeline section */}
+{selectedComplaint.updates && selectedComplaint.updates.map((update, index) => (
+  <div key={index} className="flex">
+    <div className="flex flex-col items-center mr-4">
+      <div className="w-3 h-3 bg-indigo-400 rounded-full"></div>
+      {index < selectedComplaint.updates.length - 1 && (
+        <div className="w-0.5 h-full bg-indigo-400/30 mt-1 min-h-[48px]"></div>
+      )}
+    </div>
+    <div className="pb-6">
+      <p className="text-white font-medium">{update.message}</p>
+      <p className="text-white/60 text-sm mb-2">{formatDetailDate(update.date)}</p>
+      
+      {/* IMPROVED: Display admin update photos/resolution proofs */}
+      {update.media && update.media.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {update.media.map((mediaUrl, mediaIdx) => (
+            <img 
+              key={mediaIdx} 
+              src={mediaUrl} 
+              alt="Update proof" 
+              className="h-20 w-32 object-cover rounded-md border border-white/20 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                openImageModal(mediaUrl, "Update Details");
+              }}
+            />
+          ))}
+        </div>
+      )}
+      
+      {/* Also check for resolutionImage field */}
+      {update.resolutionImage && (
+        <img 
+          src={update.resolutionImage} 
+          alt="Resolution proof" 
+          className="h-20 w-32 object-cover rounded-md border border-white/20 cursor-pointer hover:opacity-80 transition-opacity mt-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            openImageModal(update.resolutionImage, "Resolution Proof");
+          }}
+        />
+      )}
+    </div>
+  </div>
+))}                  
                   {/* No updates message */}
                   {(!selectedComplaint.updates || selectedComplaint.updates.length === 0) && (
                     <div className="text-center py-4">

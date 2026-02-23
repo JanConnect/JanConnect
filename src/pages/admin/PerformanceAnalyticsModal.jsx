@@ -125,6 +125,7 @@ const PerformanceAnalyticsModal = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* Main modal container keeps white for clean edges */}
       <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-2xl flex flex-col">
         {/* Header */}
         <div className="p-6 pb-4 flex justify-between items-start border-b border-gray-100 shrink-0">
@@ -145,16 +146,16 @@ const PerformanceAnalyticsModal = ({
           </button>
         </div>
 
-        {/* Content Body */}
+        {/* Content Body - background slightly darker than white */}
         <div className="p-6 space-y-6 flex-1 overflow-y-auto bg-slate-50/50">
           
-          {/* Subtle Filters */}
-          <div className="flex flex-wrap gap-4 items-center bg-white p-3 px-4 rounded-xl border border-gray-100 shadow-sm">
+          {/* Subtle Filters - changed to bg-gray-50 */}
+          <div className="flex flex-wrap gap-4 items-center bg-gray-50 p-3 px-4 rounded-xl border border-gray-100 shadow-sm">
             <span className="text-sm font-medium text-gray-500">Filters:</span>
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value)}
-              className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
             >
               <option value="department">Department</option>
               <option value="category">Category</option>
@@ -163,7 +164,7 @@ const PerformanceAnalyticsModal = ({
               <select
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option value="all">All Departments</option>
                 {departments.map(dept => (
@@ -175,7 +176,7 @@ const PerformanceAnalyticsModal = ({
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                className="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -190,8 +191,8 @@ const PerformanceAnalyticsModal = ({
               {/* Top Row: Stacked Chart & Radial Chart */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Stacked Bar Chart */}
-                <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                {/* Stacked Bar Chart - changed to bg-gray-50 */}
+                <div className="lg:col-span-2 bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                   <div className="mb-6">
                     <h3 className="text-base font-semibold text-gray-900">
                       {filteredData.name} — Monthly Overview
@@ -241,7 +242,7 @@ const PerformanceAnalyticsModal = ({
                                 y1={yScale(val)} 
                                 x2={chartWidth} 
                                 y2={yScale(val)} 
-                                stroke="#f3f4f6" 
+                                stroke="#e5e7eb" 
                                 strokeWidth="1" 
                                 strokeDasharray="4 4" 
                               />
@@ -307,8 +308,8 @@ const PerformanceAnalyticsModal = ({
                   </div>
                 </div>
 
-                {/* Distribution Radial Chart */}
-                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col items-center">
+                {/* Distribution Radial Chart - changed to bg-gray-50 */}
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col items-center">
                   <div className="text-center mb-6">
                     <h3 className="text-base font-semibold text-gray-900">Distribution</h3>
                     <p className="text-sm text-gray-500 mt-1">Status breakdown</p>
@@ -342,9 +343,9 @@ const PerformanceAnalyticsModal = ({
                       return (
                         <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 200 200">
                           {/* Background Tracks */}
-                          <circle cx={center} cy={center} r={radiusRed} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cRed} ${cRed}`} />
-                          <circle cx={center} cy={center} r={radiusYellow} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cYellow} ${cYellow}`} />
-                          <circle cx={center} cy={center} r={radiusGreen} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cGreen} ${cGreen}`} />
+                          <circle cx={center} cy={center} r={radiusRed} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cRed} ${cRed}`} />
+                          <circle cx={center} cy={center} r={radiusYellow} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cYellow} ${cYellow}`} />
+                          <circle cx={center} cy={center} r={radiusGreen} fill="none" stroke="#e5e7eb" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cGreen} ${cGreen}`} />
 
                           {/* Data Arcs */}
                           {/* Red (Pending) - Outer */}
@@ -385,8 +386,8 @@ const PerformanceAnalyticsModal = ({
                 </div>
               </div>
 
-              {/* Bottom Row: Resolution Rate */}
-              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              {/* Bottom Row: Resolution Rate - changed to bg-gray-50 */}
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex justify-between items-end mb-3">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-indigo-600" />
@@ -396,7 +397,7 @@ const PerformanceAnalyticsModal = ({
                 </div>
                 
                 <div className="flex items-center gap-4 mt-2">
-                  <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${summary.resolutionRate}%` }}

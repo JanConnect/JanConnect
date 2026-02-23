@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Edit3, RefreshCw, User, Phone, MessageCircle } from 'lucide-react';
 import { safeRender } from '../utils/helpers';
@@ -23,12 +23,24 @@ const ComplaintDetailView = ({
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [localComplaint, setLocalComplaint] = useState(complaint);
 
+  // 🛑 FIX 1: Keep local state synced if the parent data changes!
+  useEffect(() => {
+    setLocalComplaint(complaint);
+    setNewStatus(complaint.status);
+  }, [complaint]);
+
   const handleStatusUpdate = async () => {
     if (newStatus !== localComplaint.status) {
       setIsUpdating(true);
       try {
+        console.log(`Attempting to update status to: ${newStatus}`);
+        
+        // 🛑 FIX 2: Note how we pass the status. Make sure your parent AdminDashboard 
+        // passes this properly to the API (e.g., as { status: newStatus } if needed)
         const updatedData = await onStatusUpdate(localComplaint._id, newStatus);
         
+        console.log("Status successfully updated on backend!");
+
         const newTimelineEntry = {
           id: Date.now().toString(),
           type: 'status_change',
@@ -47,7 +59,18 @@ const ComplaintDetailView = ({
         setNewStatus(newStatus);
         
       } catch (error) {
-        console.error('Error updating status:', error);
+        // 🛑 FIX 3: Detailed error logging so you know WHY it failed
+        console.error('💥 ERROR UPDATING STATUS:', error);
+        if (error.response) {
+          console.error('Backend rejected with status:', error.response.status);
+          console.error('Backend message:', error.response.data);
+          alert(`Failed to update: ${error.response.data?.message || 'Server rejected the update'}`);
+        } else {
+          alert('Failed to update status. Check your console.');
+        }
+        
+        // Revert the dropdown back to original status since it failed
+        setNewStatus(localComplaint.status);
       } finally {
         setIsUpdating(false);
       }

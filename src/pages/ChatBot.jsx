@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { GoogleGenAI } from "@google/genai";
 
 const Chatbot = () => {
   const { t } = useTranslation();
@@ -14,7 +15,20 @@ const Chatbot = () => {
     }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [geminiStatus, setGeminiStatus] = useState('checking');
   const messagesEndRef = useRef(null);
+
+  // Initialize Google GenAI with API key
+  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+  // Available models - using the correct ones from your example
+const AVAILABLE_MODELS = [
+  "gemini-2.0-flash",        // Stable free model ✅
+  "gemini-2.0-pro",          // More powerful
+  "gemini-3-flash-preview",  // New preview model
+];
 
   // Enhanced FAQ data with multilingual support
   const faqData = [
@@ -136,75 +150,162 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Check Gemini connection on mount
+  useEffect(() => {
+    checkGeminiConnection();
+  }, []);
+
+  const checkGeminiConnection = async () => {
+    if (!GEMINI_API_KEY) {
+      console.error("❌ Gemini API key is missing!");
+      setGeminiStatus('error');
+      return;
+    }
+
+    console.log("Checking Gemini connection with SDK...");
+    
+    try {
+      // Try to make a simple request using the SDK
+      const response = await ai.models.generateContent({
+  model: "gemini-2.0-flash",  // Use a known working model
+  contents: "Respond with just the word 'OK' if you can hear me.",
+  config: {
+    maxOutputTokens: 10,
+  },
+});
+      if (response && response.text) {
+        console.log("✅ Gemini connected successfully!", response.text);
+        setGeminiStatus('connected');
+      } else {
+        throw new Error("Invalid response");
+      }
+    } catch (error) {
+      console.error("❌ Gemini connection failed:", error);
+      setGeminiStatus('error');
+    }
+  };
+
+  // Check if question matches FAQ
+  const checkFAQMatch = (userInput) => {
+    for (const faq of faqData) {
+      const keywords = faq.question.toLowerCase().split('|');
+      if (keywords.some(keyword => userInput.includes(keyword))) {
+        return faq.answer;
+      }
+    }
+    return null;
+  };
+
+  // Get response from Gemini API using the SDK
+  const getGeminiResponse = async (userInput) => {
+    if (!GEMINI_API_KEY) {
+      console.error("Gemini API key not found");
+      return "I'm having trouble connecting to my AI services. Please try again later or contact support@janconnect.com for assistance.";
+    }
+
+    const systemPrompt = `You are JanBot, a helpful civic assistant for JanConnect platform. Your role is to help users with civic issues, reporting problems, and navigating the platform. Keep responses concise, friendly, and helpful. If you don't know something, suggest they contact support@janconnect.com. Focus on these topics: reporting civic issues, tracking complaints, platform features, community reporting, and general civic assistance.`;
+
+    try {
+      // Try different models if one fails
+      let lastError = null;
+      
+      for (const model of AVAILABLE_MODELS) {
+        try {
+          console.log(`Trying model: ${model}`);
+          
+          const response = await ai.models.generateContent({
+            model: model,
+            contents: `${systemPrompt}\n\nUser question: ${userInput}\n\nProvide a helpful response about civic issues and JanConnect platform:`,
+            config: {
+              temperature: 0.7,
+              maxOutputTokens: 300,
+            },
+          });
+          
+          if (response && response.text) {
+            console.log(`✅ Got response from model: ${model}`);
+            return response.text;
+          }
+        } catch (modelError) {
+          console.log(`Model ${model} failed:`, modelError.message);
+          lastError = modelError;
+          // Continue to next model
+        }
+      }
+      
+      // If all models fail
+      throw lastError || new Error("All models failed");
+      
+    } catch (error) {
+      console.error("Gemini API error:", error);
+      
+      // Handle specific error types
+      if (error.message?.includes("quota") || error.message?.includes("429")) {
+        return "I'm currently experiencing high demand. Please try again in a few moments, or check our FAQ for common questions!";
+      }
+      
+      return "I'm having trouble processing your request right now. Please try again or contact support@janconnect.com for help.";
+    }
+  };
+
   // Handle sending a message
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputValue.trim() === '') return;
 
+    const userMessage = inputValue.trim();
+    
     // Add user message
     const newUserMessage = {
       id: messages.length + 1,
-      text: inputValue,
+      text: userMessage,
       sender: 'user'
     };
 
     setMessages(prev => [...prev, newUserMessage]);
     setInputValue('');
+    setIsLoading(true);
 
-    // Simulate bot response with a delay
-    setTimeout(() => {
-      handleBotResponse(inputValue.toLowerCase());
-    }, 600);
-  };
-
-  // Handle bot response based on user input
-  const handleBotResponse = (userInput) => {
-    let foundAnswer = false;
-
-    // Check for matching FAQ
-    for (const faq of faqData) {
-      const keywords = faq.question.split('|');
-      if (keywords.some(keyword => userInput.includes(keyword.toLowerCase()))) {
-        const botResponse = {
-          id: messages.length + 2,
-          text: faq.answer,
-          sender: 'bot'
-        };
-        setMessages(prev => [...prev, botResponse]);
-        foundAnswer = true;
-        break;
+    try {
+      // First check if it matches FAQ
+      const faqAnswer = checkFAQMatch(userMessage.toLowerCase());
+      
+      let botResponseText;
+      
+      if (faqAnswer) {
+        // Use predefined FAQ answer
+        botResponseText = faqAnswer;
+        console.log("Using FAQ response");
+      } else {
+        // Use Gemini API for other questions
+        console.log("Using Gemini for response");
+        botResponseText = await getGeminiResponse(userMessage);
       }
-    }
 
-    // Default responses for common complaint patterns - multilingual
-    if (!foundAnswer) {
-      let defaultResponse = {
+      const botResponse = {
         id: messages.length + 2,
+        text: botResponseText,
         sender: 'bot'
       };
       
-      if (userInput.includes(t('chatbot.patterns.unhappy', 'not happy')) || userInput.includes('unhappy') || userInput.includes('frustrated')) {
-        defaultResponse.text = t('chatbot.responses.unhappy', "I understand you're frustrated. Dealing with civic issues can be challenging. Would you like me to help you escalate your report or check its current status?");
-      } 
-      else if (userInput.includes('why') && userInput.includes('not')) {
-        defaultResponse.text = t('chatbot.responses.whyNot', "I'm not sure why your issue hasn't been resolved yet. It could be due to high volume, resource constraints, or complexity. Would you like to check the status of your report or add a comment to request an update?");
-      }
-      else if (userInput.includes('when') || userInput.includes('how long')) {
-        defaultResponse.text = t('chatbot.responses.when', "Response times vary based on issue type and severity. Critical issues are typically addressed within 24-48 hours, while standard issues may take 3-5 days. Would you like to check the status of a specific report?");
-      }
-      else if (userInput.includes(t('chatbot.patterns.problem', 'problem')) || userInput.includes('issue') || userInput.includes('complaint')) {
-        defaultResponse.text = t('chatbot.responses.problem', "I can help you report a new issue or check on an existing one. Would you like to know how to report a problem or check the status of a report you've already submitted?");
-      }
-      else {
-        defaultResponse.text = t('chatbot.responses.default', "I'm not sure about that yet. Try asking about reporting issues, tracking complaints, or how our platform works. For specific account questions, contact our support team at support@janconnect.com.");
-      }
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error("Error getting response:", error);
       
-      setMessages(prev => [...prev, defaultResponse]);
+      // Fallback response
+      const errorResponse = {
+        id: messages.length + 2,
+        text: "I'm having trouble responding right now. Please try again or check our FAQ for common questions!",
+        sender: 'bot'
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Handle key press (Enter to send)
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isLoading) {
       handleSendMessage();
     }
   };
@@ -271,7 +372,30 @@ const Chatbot = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-base sm:text-lg">{t('chatbot.title', 'JanBot Assistant')}</h3>
-                <p className="text-xs opacity-80">{t('chatbot.subtitle', 'Here to help with civic issues')}</p>
+                <p className="text-xs opacity-80 flex items-center">
+                  {t('chatbot.subtitle', 'Here to help with civic issues')}
+                  {/* Status Indicator */}
+                  <span className="ml-2 inline-flex items-center">
+                    {geminiStatus === 'checking' && (
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse mr-1"></span>
+                        <span className="text-[10px]">Connecting...</span>
+                      </span>
+                    )}
+                    {geminiStatus === 'connected' && (
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                        <span className="text-[10px]">AI Ready</span>
+                      </span>
+                    )}
+                    {geminiStatus === 'error' && (
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-red-400 rounded-full mr-1"></span>
+                        <span className="text-[10px]">Using FAQ only</span>
+                      </span>
+                    )}
+                  </span>
+                </p>
               </div>
             </div>
             <button 
@@ -303,6 +427,17 @@ const Chatbot = () => {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start mb-3 sm:mb-4">
+                <div className="bg-gray-700 text-gray-100 border border-gray-600 p-3 sm:p-4 rounded-2xl">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -336,7 +471,8 @@ const Chatbot = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-gray-600 border border-gray-500 rounded-xl hover:bg-gray-500 transition-colors text-gray-200 break-words max-w-[48%] sm:max-w-none"
+                  disabled={isLoading}
+                  className="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-gray-600 border border-gray-500 rounded-xl hover:bg-gray-500 transition-colors text-gray-200 break-words max-w-[48%] sm:max-w-none disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ wordBreak: 'break-word' }}
                 >
                   {suggestion}
@@ -353,18 +489,25 @@ const Chatbot = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
+                disabled={isLoading}
                 placeholder={t('chatbot.placeholder', 'Ask JanBot about reporting issues...')}
-                className="flex-1 px-3 py-2 sm:px-4 sm:py-3 text-sm bg-gray-600 border border-gray-500 rounded-2xl rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder-gray-400"
+                className="flex-1 px-3 py-2 sm:px-4 sm:py-3 text-sm bg-gray-600 border border-gray-500 rounded-2xl rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder-gray-400 disabled:opacity-50"
               />
               <button
                 onClick={handleSendMessage}
-                disabled={inputValue.trim() === ''}
+                disabled={inputValue.trim() === '' || isLoading}
                 className="px-3 py-2 sm:px-4 sm:py-3 text-white bg-indigo-600 rounded-2xl rounded-l-none hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 aria-label={t('chatbot.sendButton', 'Send message')}
               >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-                </svg>
+                {isLoading ? (
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                  </svg>
+                )}
               </button>
             </div>
           </div>

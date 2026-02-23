@@ -237,105 +237,265 @@ const AdminDashboard = () => {
             />
 
             {/* Analytics Section */}
+<motion.div 
+  className="bg-gradient-to-br backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-6 max-w-4xl mx-auto shadow-2xl"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.3 }}
+>
+  {/* Header with Gradient */}
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <div className="p-2 bg-indigo-500/20 rounded-xl">
+          <BarChart3 className="h-6 w-6 text-indigo-400" />
+        </div>
+        <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text">
+          Performance Analytics
+        </span>
+      </h2>
+      <p className="text-white/50 text-sm mt-1">Real-time overview of complaint status</p>
+    </div>
+    
+    <motion.button 
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => setShowAnalyticsModal(true)}
+      className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25 flex items-center gap-2 font-medium"
+    >
+      <BarChart3 className="h-4 w-4" />
+      Detailed Analytics
+    </motion.button>
+  </div>
+  
+  {/* Enhanced Category Selection */}
+  <div className="mb-6">
+    <label className="block text-sm font-medium text-white/60 mb-2 flex items-center gap-2">
+      <span className="w-1 h-4 bg-indigo-400 rounded-full"></span>
+      Choose Category
+    </label>
+    <div className="relative">
+      <select
+        value={selectedAnalyticsCategory}
+        onChange={(e) => setSelectedAnalyticsCategory(e.target.value)}
+        className="w-full max-w-xs px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all hover:bg-white/10"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' strokeOpacity='0.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 1rem center',
+          backgroundSize: '1.5rem',
+        }}
+      >
+        <option value="all" className="bg-gray-800">All Categories</option>
+        {categories.map(category => (
+          <option key={category} value={category} className="bg-gray-800">
+            {category}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Enhanced Analytics Graph with Cards */}
+  <div className="space-y-6">
+    {/* Status Overview Header */}
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+        <span className="w-1 h-5 bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full"></span>
+        {selectedAnalyticsCategory === 'all' ? 'Overall Performance' : `${selectedAnalyticsCategory} Performance`}
+      </h3>
+      
+      {/* Mini Legend */}
+      <div className="flex gap-3 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+          <span className="text-white/50">Pending</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+          <span className="text-white/50">In Progress</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <span className="text-white/50">Resolved</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Enhanced Progress Bars */}
+    <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+      {(() => {
+        const data = getAnalyticsData();
+        const maxValue = Math.max(data.pending, data.inProgress, data.resolved) || 1;
+        const total = data.pending + data.inProgress + data.resolved;
+        
+        const items = [
+          { label: 'Pending', value: data.pending, color: 'from-red-500 to-red-400', bg: 'bg-red-500/20', icon: '⏳' },
+          { label: 'In Progress', value: data.inProgress, color: 'from-yellow-500 to-yellow-400', bg: 'bg-yellow-500/20', icon: '🔄' },
+          { label: 'Resolved', value: data.resolved, color: 'from-green-500 to-green-400', bg: 'bg-green-500/20', icon: '✅' },
+        ];
+
+        return items.map((item, index) => {
+          const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          
+          return (
             <motion.div 
-              className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-6 max-w-6xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              key={item.label}
+              className="mb-4 last:mb-0"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="h-6 w-6" />
-                  Performance Analytics
-                </h2>
-                <button 
-                  onClick={() => setShowAnalyticsModal(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200"
-                >
-                  View Detailed Analytics
-                </button>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-sm font-medium text-white/80">{item.label}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-white">{item.value}</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-white/60">
+                    {percentage}%
+                  </span>
+                </div>
               </div>
               
-              {/* Category Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-white/70 mb-2">Choose Category</label>
-                <select
-                  style={{ color: 'white', backgroundColor: 'gray' }}
-                  value={selectedAnalyticsCategory}
-                  onChange={(e) => setSelectedAnalyticsCategory(e.target.value)}
-                  className="w-full max-w-xs px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              <div className="relative h-3 bg-white/5 rounded-full overflow-hidden group">
+                {/* Animated progress bar */}
+                <motion.div 
+                  className={`absolute top-0 left-0 h-full rounded-full bg-gradient-to-r ${item.color}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(item.value / maxValue) * 100}%` }}
+                  transition={{ duration: 1, delay: 0.3 + index * 0.1 }}
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Linear Analytics Graph */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  {selectedAnalyticsCategory === 'all' ? 'All Categories' : selectedAnalyticsCategory} - Status Overview
-                </h3>
-                <div className="space-y-4">
-                  {(() => {
-                    const data = getAnalyticsData();
-                    const maxValue = Math.max(data.pending, data.inProgress, data.resolved) || 1;
-                    
-                    return (
-                      <>
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">Pending</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-red-300/70 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.pending / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.pending}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">In Progress</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-yellow-300/70 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.inProgress / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.inProgress}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="w-20 text-sm text-white/70">Resolved</div>
-                          <div className="flex-1 bg-white/10 rounded-full h-6 relative overflow-hidden">
-                            <div 
-                              className="h-full bg-green-300/70 transition-all duration-1000 ease-out"
-                              style={{ width: `${(data.resolved / maxValue) * 100}%` }}
-                            ></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                              {data.resolved}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shine"></div>
+                </motion.div>
+                
+                {/* Hover tooltip */}
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                  {item.value} complaints
                 </div>
               </div>
             </motion.div>
+          );
+        });
+      })()}
+    </div>
+
+    {/* Statistics Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {(() => {
+        const data = getAnalyticsData();
+        const total = data.pending + data.inProgress + data.resolved;
+        
+        return [
+          { 
+            label: 'Pending', 
+            value: data.pending, 
+            color: 'red',
+            icon: '⏳',
+            percentage: total > 0 ? Math.round((data.pending / total) * 100) : 0,
+            bg: 'from-red-500/10 to-red-600/5',
+            border: 'border-red-500/20'
+          },
+          { 
+            label: 'In Progress', 
+            value: data.inProgress, 
+            color: 'yellow',
+            icon: '🔄',
+            percentage: total > 0 ? Math.round((data.inProgress / total) * 100) : 0,
+            bg: 'from-yellow-500/10 to-yellow-600/5',
+            border: 'border-yellow-500/20'
+          },
+          { 
+            label: 'Resolved', 
+            value: data.resolved, 
+            color: 'green',
+            icon: '✅',
+            percentage: total > 0 ? Math.round((data.resolved / total) * 100) : 0,
+            bg: 'from-green-500/10 to-green-600/5',
+            border: 'border-green-500/20'
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            className={`bg-gradient-to-br ${stat.bg} rounded-xl p-4 border ${stat.border}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 + index * 0.1 }}
+            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-white/50 text-xs mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-white">{stat.value}</p>
+              </div>
+              <span className="text-2xl">{stat.icon}</span>
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              <div className={`w-1 h-1 bg-${stat.color}-400 rounded-full`}></div>
+              <span className="text-xs text-white/40">{stat.percentage}% of total</span>
+            </div>
+          </motion.div>
+        ));
+      })()}
+    </div>
+
+    {/* Trend Indicator */}
+    {(() => {
+      const data = getAnalyticsData();
+      const total = data.pending + data.inProgress + data.resolved;
+      const resolvedPercentage = total > 0 ? (data.resolved / total) * 100 : 0;
+      
+      return (
+        <motion.div 
+          className="bg-white/5 rounded-lg p-3 border border-white/10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white/60">Resolution Rate</span>
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                resolvedPercentage >= 70 ? 'bg-green-500/20 text-green-400' :
+                resolvedPercentage >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
+                'bg-red-500/20 text-red-400'
+              }`}>
+                {resolvedPercentage.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-white/40">vs last month</span>
+              <span className="text-xs text-green-400">↑ 12%</span>
+            </div>
+          </div>
+        </motion.div>
+      );
+    })()}
+  </div>
+
+  {/* Add animation keyframes */}
+  <style jsx>{`
+    @keyframes shine {
+      0% {
+        transform: translateX(-100%) skewX(-12deg);
+      }
+      100% {
+        transform: translateX(200%) skewX(-12deg);
+      }
+    }
+    .animate-shine {
+      animation: shine 2s infinite;
+    }
+  `}</style>
+</motion.div>
 
             {/* Complaints List */}
             <div className="max-w-6xl mx-auto">
               <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">Recent Complaints</h2>
-                <div className="flex gap-2">
+                <h2 className="text-2xl ml-30 font-bold text-white ">Recent Complaints</h2>
+                <div className="flex gap-2 mr-30">
                   <button
                     onClick={() => setCurrentView('map')}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"

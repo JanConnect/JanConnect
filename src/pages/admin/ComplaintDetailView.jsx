@@ -27,10 +27,8 @@ const ComplaintDetailView = ({
     if (newStatus !== localComplaint.status) {
       setIsUpdating(true);
       try {
-        // Call the parent's onStatusUpdate with the complaint ID and new status
         const updatedData = await onStatusUpdate(localComplaint._id, newStatus);
         
-        // Create a new timeline entry for the status change
         const newTimelineEntry = {
           id: Date.now().toString(),
           type: 'status_change',
@@ -40,14 +38,12 @@ const ComplaintDetailView = ({
           updatedBy: { name: 'Admin' }
         };
         
-        // Update local state with new status and timeline entry
         setLocalComplaint(prev => ({
           ...prev,
           status: newStatus,
           updates: [...(prev.updates || []), newTimelineEntry]
         }));
         
-        // Reset the newStatus to match the updated status
         setNewStatus(newStatus);
         
       } catch (error) {
@@ -63,7 +59,6 @@ const ComplaintDetailView = ({
     try {
       const newComment = await onAddComment(localComplaint._id, commentData);
       
-      // Create a new timeline entry for the comment
       const newCommentEntry = {
         id: newComment?.id || Date.now().toString(),
         type: 'comment',
@@ -73,7 +68,6 @@ const ComplaintDetailView = ({
         media: commentData.media
       };
       
-      // Update local state with new comment
       setLocalComplaint(prev => ({
         ...prev,
         updates: [...(prev.updates || []), newCommentEntry]
@@ -93,12 +87,14 @@ const ComplaintDetailView = ({
     { value: 'rejected', label: 'Rejected' }
   ];
 
-  // Use localComplaint for rendering to show updates immediately
   const displayComplaint = localComplaint;
+
+  // Reusable divider component for clean separation inside the single boxes
+  const SectionDivider = () => <hr className="border-white/10 my-6" />;
 
   return (
     <motion.div
-      className="p-6 max-w-6xl mx-auto"
+      className="p-6 max-w-7xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -116,127 +112,83 @@ const ComplaintDetailView = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Basic Info */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">{safeRender(displayComplaint.title, 'Untitled Report')}</h2>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
+        
+        {/* ==================== SIDEBAR (1 Box) ==================== */}
+        <motion.div
+          className="lg:col-span-1 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 h-fit"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {/* Complaint Details */}
+          <div>
+            <h2 className="text-xl font-bold text-white mb-4">{safeRender(displayComplaint.title, 'Untitled Report')}</h2>
+            <div className="space-y-3">
+              <div className="flex justify-between">
                 <span className="text-white/60 text-sm">Report ID:</span>
-                <p className="text-white">{safeRender(displayComplaint.reportId, 'N/A')}</p>
+                <span className="text-white text-sm">{safeRender(displayComplaint.reportId, 'N/A')}</span>
               </div>
-              <div>
+              <div className="flex justify-between">
                 <span className="text-white/60 text-sm">Category:</span>
-                <p className="text-white">{safeRender(displayComplaint.category, 'Unknown')}</p>
+                <span className="text-white text-sm">{safeRender(displayComplaint.category, 'Unknown')}</span>
               </div>
-              <div>
+              <div className="flex justify-between">
+                <span className="text-white/60 text-sm">Priority:</span>
+                <span className="text-white text-sm">{safeRender(displayComplaint.priority || displayComplaint.urgency, 'Unknown')}</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-white/60 text-sm">Status:</span>
-                <p className={`text-white capitalize font-semibold ${
+                <span className={`text-sm capitalize font-semibold px-2 py-1 rounded-md bg-black/20 ${
                   displayComplaint.status === 'resolved' ? 'text-green-400' :
                   displayComplaint.status === 'rejected' ? 'text-red-400' :
                   displayComplaint.status === 'in-progress' ? 'text-blue-400' :
                   'text-yellow-400'
                 }`}>
                   {safeRender(displayComplaint.status, 'Unknown')}
+                </span>
+              </div>
+              <div className="pt-2">
+                <span className="text-white/60 text-sm block mb-1">Description:</span>
+                <p className="text-white text-sm bg-black/10 p-3 rounded-lg leading-relaxed">
+                  {safeRender(displayComplaint.description, 'No description available')}
                 </p>
               </div>
-              <div>
-                <span className="text-white/60 text-sm">Priority:</span>
-                <p className="text-white">{safeRender(displayComplaint.priority || displayComplaint.urgency, 'Unknown')}</p>
-              </div>
             </div>
-            
-            <div className="mb-4">
-              <span className="text-white/60 text-sm">Description:</span>
-              <p className="text-white mt-2">{safeRender(displayComplaint.description, 'No description available')}</p>
-            </div>
-          </motion.div>
+          </div>
 
-          {/* Location Section with Google Maps */}
-          <LocationDisplay location={displayComplaint.location} />
+          <SectionDivider />
 
-          {/* Media Gallery */}
-          <MediaGallery 
-            image={displayComplaint.image} 
-            voiceMessage={displayComplaint.voiceMessage} 
-          />
-          
-          {/* Timeline */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-xl font-semibold text-white mb-4">Timeline</h2>
-            <Timeline 
-              events={displayComplaint.updates || displayComplaint.comments || []} 
-              complaint={displayComplaint}
-            />
-          </motion.div>
-
-          {/* Add Comment Section */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Add Progress Update
-            </h2>
-            <CommentForm onAddComment={handleAddComment} isSubmitting={isAddingComment} />
-          </motion.div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
           {/* Reporter Info */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          <div>
             <h3 className="text-lg font-semibold text-white mb-4">Reporter Information</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center shrink-0">
                   <User className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-white font-medium">{safeRender(displayComplaint.reportedBy?.name, 'Anonymous')}</p>
-                  <p className="text-white/60 text-sm">{safeRender(displayComplaint.reportedBy?.email, 'No email')}</p>
+                <div className="overflow-hidden">
+                  <p className="text-white font-medium truncate">{safeRender(displayComplaint.reportedBy?.name, 'Anonymous')}</p>
+                  <p className="text-white/60 text-sm truncate">{safeRender(displayComplaint.reportedBy?.email, 'No email')}</p>
                 </div>
               </div>
               
               {displayComplaint.reportedBy?.phone && (
-                <div className="flex items-center gap-2 text-white/70">
+                <div className="flex items-center gap-2 text-white/70 bg-black/10 p-2 rounded-lg">
                   <Phone className="h-4 w-4" />
-                  <span>{displayComplaint.reportedBy.phone}</span>
+                  <span className="text-sm">{displayComplaint.reportedBy.phone}</span>
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
+
+          <SectionDivider />
 
           {/* Status Update */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          <div>
             <h3 className="text-lg font-semibold text-white mb-4">Update Status</h3>
             <div className="space-y-4">
               <select
-                style={{ color: 'white', backgroundColor: 'gray' }}
+                style={{ color: 'white', backgroundColor: '#374151' }} // Using a standard tailwind dark gray for better visibility
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -251,7 +203,7 @@ const ComplaintDetailView = ({
               <button
                 onClick={handleStatusUpdate}
                 disabled={newStatus === displayComplaint.status || isUpdating}
-                className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-lg text-white font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400/50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isUpdating ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -261,15 +213,12 @@ const ComplaintDetailView = ({
                 {isUpdating ? 'Updating...' : 'Update Status'}
               </button>
             </div>
-          </motion.div>
+          </div>
+
+          <SectionDivider />
 
           {/* Department Assignment */}
-          <motion.div
-            className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <div>
             <h3 className="text-lg font-semibold text-white mb-4">Department Management</h3>
             <DepartmentAssignment
               complaint={displayComplaint}
@@ -278,8 +227,56 @@ const ComplaintDetailView = ({
               onUnassign={onUnassign}
               isAssigning={isAssigning}
             />
-          </motion.div>
-        </div>
+          </div>
+          <SectionDivider />
+          {/* Add Comment / Progress Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Add Progress Update
+            </h2>
+            <CommentForm onAddComment={handleAddComment} isSubmitting={isAddingComment} />
+          </div>
+        </motion.div>
+
+
+        {/* ==================== MAIN CONTENT (1 Box) ==================== */}
+        <motion.div
+          className="lg:col-span-2 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Media Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4">Attached Media</h2>
+            <MediaGallery 
+              image={displayComplaint.image} 
+              voiceMessage={displayComplaint.voiceMessage} 
+            />
+          </div>
+
+          <SectionDivider />
+
+          {/* Location Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4">Location</h2>
+            <LocationDisplay location={displayComplaint.location} />
+          </div>
+
+          <SectionDivider />
+
+          {/* Timeline Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4">Activity Timeline</h2>
+            <Timeline 
+              events={displayComplaint.updates || displayComplaint.comments || []} 
+              complaint={displayComplaint}
+            />
+          </div>
+
+        </motion.div>
+
       </div>
     </motion.div>
   );

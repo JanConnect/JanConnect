@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, BarChart3, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, BarChart3, TrendingUp } from 'lucide-react';
 
-const PerformanceAnalyticsModal = ({ 
-  isOpen, 
-  onClose, 
-  departments, 
+const PerformanceAnalyticsModal = ({
+  isOpen,
+  onClose,
+  departments,
   complaints,
-  categories 
+  categories
 }) => {
   const [selectedFilter, setSelectedFilter] = useState('department');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [analytics, setAnalytics] = useState({});
-  const [hoveredPoint, setHoveredPoint] = useState(null);
 
-  // Mock function - replace with actual implementation
+  // Mock function - replaces with actual implementation
   const generateDepartmentAnalytics = (complaints, departments) => {
     const analytics = {};
     departments.forEach(dept => {
@@ -23,9 +22,9 @@ const PerformanceAnalyticsModal = ({
         name: dept.name,
         monthlyData: Array.from({ length: 12 }, (_, i) => ({
           month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-          pending: Math.floor(Math.random() * 50),
-          inProgress: Math.floor(Math.random() * 60),
-          resolved: Math.floor(Math.random() * 100),
+          pending: Math.floor(Math.random() * 40) + 5,
+          inProgress: Math.floor(Math.random() * 50) + 10,
+          resolved: Math.floor(Math.random() * 80) + 20,
           avgResolutionTime: Math.floor(Math.random() * 10) + 2
         }))
       };
@@ -47,19 +46,19 @@ const PerformanceAnalyticsModal = ({
       const deptIds = departments
         .filter(d => d.category === selectedCategory)
         .map(d => d._id);
-      
+
       const combinedData = {
         name: `${selectedCategory} Category`,
         category: selectedCategory,
         monthlyData: Array.from({ length: 12 }, (_, i) => {
-          const monthData = { 
+          const monthData = {
             month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-            pending: 0, 
-            inProgress: 0, 
-            resolved: 0, 
-            avgResolutionTime: 0 
+            pending: 0,
+            inProgress: 0,
+            resolved: 0,
+            avgResolutionTime: 0
           };
-          
+
           deptIds.forEach(deptId => {
             if (analytics[deptId]) {
               const deptMonth = analytics[deptId].monthlyData[i];
@@ -69,19 +68,30 @@ const PerformanceAnalyticsModal = ({
               monthData.avgResolutionTime += deptMonth.avgResolutionTime;
             }
           });
-          
+
           if (deptIds.length > 0) {
             monthData.avgResolutionTime = monthData.avgResolutionTime / deptIds.length;
           }
-          
+
           return monthData;
         })
       };
-      
+
       return combinedData;
     }
-    
-    return null;
+
+    // Default return all summary if nothing selected
+    const allData = {
+      name: "IT Services",
+      monthlyData: Array.from({ length: 12 }, (_, i) => ({
+        month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
+        pending: Math.floor(Math.random() * 40) + 5,
+        inProgress: Math.floor(Math.random() * 50) + 10,
+        resolved: Math.floor(Math.random() * 80) + 20,
+        avgResolutionTime: 5.7
+      }))
+    };
+    return allData;
   };
 
   const filteredData = getFilteredData();
@@ -89,14 +99,14 @@ const PerformanceAnalyticsModal = ({
   // Calculate summary statistics
   const calculateSummary = () => {
     if (!filteredData) return null;
-    
+
     const totalPending = filteredData.monthlyData.reduce((sum, month) => sum + month.pending, 0);
     const totalInProgress = filteredData.monthlyData.reduce((sum, month) => sum + month.inProgress, 0);
     const totalResolved = filteredData.monthlyData.reduce((sum, month) => sum + month.resolved, 0);
     const totalComplaints = totalPending + totalInProgress + totalResolved;
-    
+
     const avgResolutionTime = filteredData.monthlyData.reduce((sum, month) => sum + month.avgResolutionTime, 0) / 12;
-    
+
     return {
       totalComplaints,
       totalResolved,
@@ -104,6 +114,8 @@ const PerformanceAnalyticsModal = ({
       totalInProgress,
       avgResolutionTime: avgResolutionTime.toFixed(1),
       resolutionRate: totalComplaints > 0 ? ((totalResolved / totalComplaints) * 100).toFixed(1) : 0,
+      inProgressRate: totalComplaints > 0 ? ((totalInProgress / totalComplaints) * 100).toFixed(1) : 0,
+      pendingRate: totalComplaints > 0 ? ((totalPending / totalComplaints) * 100).toFixed(1) : 0,
     };
   };
 
@@ -112,491 +124,293 @@ const PerformanceAnalyticsModal = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-[#0f172a]/90 to-[#1e293b]/90 backdrop-blur-xl rounded-2xl border border-white/10 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="p-6 border-b border-white/10">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/20 rounded-xl">
-                  <BarChart3 className="h-5 w-5 text-indigo-400" />
-                </div>
-                <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                  Performance Analytics
-                </span>
-              </h2>
-              <p className="text-white/40 text-sm mt-1">
-                Monthly complaint performance overview
-              </p>
+    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="p-6 pb-4 flex justify-between items-start border-b border-gray-100 shrink-0">
+          <div className="flex gap-4 items-center">
+            <div className="bg-indigo-50 p-3 rounded-xl">
+              <BarChart3 className="h-6 w-6 text-indigo-500" />
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/5 transition"
-            >
-              <X className="h-5 w-5 text-white/60 hover:text-white" />
-            </button>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Performance Analytics</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Monthly complaint performance overview</p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="p-6">
-          {/* Filter Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">View By</label>
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all hover:bg-white/10"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' strokeOpacity='0.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.5rem',
-                }}
-              >
-                <option value="department" className="bg-[#1e293b]">Department</option>
-                <option value="category" className="bg-[#1e293b]">Category</option>
-              </select>
-            </div>
-
+        {/* Content Body */}
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto bg-slate-50/50">
+          
+          {/* Subtle Filters */}
+          <div className="flex flex-wrap gap-4 items-center bg-white p-3 px-4 rounded-xl border border-gray-100 shadow-sm">
+            <span className="text-sm font-medium text-gray-500">Filters:</span>
+            <select
+              value={selectedFilter}
+              onChange={(e) => setSelectedFilter(e.target.value)}
+              className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              <option value="department">Department</option>
+              <option value="category">Category</option>
+            </select>
             {selectedFilter === 'department' && (
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Select Department</label>
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all hover:bg-white/10"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' strokeOpacity='0.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.5rem',
-                  }}
-                >
-                  <option value="all" className="bg-[#1e293b]">All Departments</option>
-                  {departments.map(dept => (
-                    <option key={dept._id} value={dept._id} className="bg-[#1e293b]">
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option value="all">All Departments</option>
+                {departments.map(dept => (
+                  <option key={dept._id} value={dept._id}>{dept.name}</option>
+                ))}
+              </select>
             )}
-
             {selectedFilter === 'category' && (
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Select Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 transition-all hover:bg-white/10"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' strokeOpacity='0.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.5rem',
-                  }}
-                >
-                  <option value="all" className="bg-[#1e293b]">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category} className="bg-[#1e293b]">
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option value="all">All Categories</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
             )}
           </div>
 
-          {/* Analytics Display */}
           {filteredData ? (
-            <div className="space-y-6">
-              {/* Summary Cards */}
-              {summary && (
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                  {[
-                    { 
-                      label: 'Total', 
-                      value: summary.totalComplaints, 
-                      icon: <BarChart3 className="h-4 w-4 text-indigo-400" />,
-                      bg: 'from-indigo-500/10 to-indigo-600/5',
-                      border: 'border-indigo-500/20'
-                    },
-                    { 
-                      label: 'Resolved', 
-                      value: summary.totalResolved, 
-                      icon: <CheckCircle className="h-4 w-4 text-green-400" />,
-                      bg: 'from-green-500/10 to-green-600/5',
-                      border: 'border-green-500/20'
-                    },
-                    { 
-                      label: 'In Progress', 
-                      value: summary.totalInProgress, 
-                      icon: <AlertCircle className="h-4 w-4 text-yellow-400" />,
-                      bg: 'from-yellow-500/10 to-yellow-600/5',
-                      border: 'border-yellow-500/20'
-                    },
-                    { 
-                      label: 'Pending', 
-                      value: summary.totalPending, 
-                      icon: <Clock className="h-4 w-4 text-red-400" />,
-                      bg: 'from-red-500/10 to-red-600/5',
-                      border: 'border-red-500/20'
-                    },
-                    { 
-                      label: 'Avg Days', 
-                      value: summary.avgResolutionTime, 
-                      icon: <TrendingUp className="h-4 w-4 text-purple-400" />,
-                      bg: 'from-purple-500/10 to-purple-600/5',
-                      border: 'border-purple-500/20'
-                    }
-                  ].map((stat, index) => (
-                    <div
-                      key={stat.label}
-                      className={`bg-gradient-to-br ${stat.bg} rounded-xl p-4 border ${stat.border}`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-white/50 text-xs mb-1">{stat.label}</p>
-                          <p className="text-xl font-bold text-white">{stat.value}</p>
-                        </div>
-                        <div className="p-2 bg-white/5 rounded-lg">
-                          {stat.icon}
-                        </div>
-                      </div>
-                      {stat.label === 'Resolved' && (
-                        <div className="mt-2">
-                          <span className="text-xs text-green-400">{summary.resolutionRate}% rate</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Chart Section */}
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      <span className="w-1 h-5 bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full"></span>
-                      {filteredData.name} - Monthly Trends
+            <>
+              {/* Top Row: Stacked Chart & Radial Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Stacked Bar Chart */}
+                <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="mb-6">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {filteredData.name} — Monthly Overview
                     </h3>
-                    <p className="text-white/40 text-sm mt-1">Complaint status progression over time</p>
+                    <p className="text-sm text-gray-500 mt-1">Stacked view of complaint statuses by month</p>
                   </div>
-                  
-                  {/* Legend */}
-                  <div className="flex gap-4">
-                    {[
-                      { color: "bg-red-500", text: "Pending" },
-                      { color: "bg-yellow-500", text: "In Progress" },
-                      { color: "bg-green-500", text: "Resolved" }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <div className={`w-3 h-3 ${item.color} rounded-full animate-pulse`} style={{ animationDelay: `${i * 0.2}s` }}></div>
-                        <span className="text-xs text-white/70">{item.text}</span>
-                      </div>
-                    ))}
+
+                  <div className="flex gap-4 mb-8">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                      <span className="text-xs text-gray-500 font-medium">Pending</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-amber-500 rounded-full"></div>
+                      <span className="text-xs text-gray-500 font-medium">In Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                      <span className="text-xs text-gray-500 font-medium">Resolved</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Chart Container */}
-                <div className="relative h-80 w-full bg-gradient-to-br from-[#0f172a]/50 to-[#1e293b]/50 rounded-xl p-4 border border-white/5">
-                  {(() => {
-                    const chartData = filteredData.monthlyData.map(d => ({
-                      month: d.month,
-                      pending: d.pending,
-                      inProgress: d.inProgress,
-                      resolved: d.resolved
-                    }));
+                  <div className="relative h-64 w-full mt-4">
+                    {(() => {
+                      const chartData = filteredData.monthlyData;
+                      const maxStack = Math.max(...chartData.map(d => d.pending + d.inProgress + d.resolved)) || 100;
+                      // Generate 4 intervals for the Y axis
+                      const tickMax = Math.ceil(maxStack / 45) * 45; // Match 45, 90, 135 logic from image roughly
+                      const yTicks = [0, tickMax * 0.25, tickMax * 0.5, tickMax * 0.75, tickMax];
+                      
+                      const chartWidth = 1000;
+                      const chartHeight = 250;
+                      const leftMargin = 40;
+                      const bottomMargin = 30;
+                      const barWidth = 36;
+                      const stepX = (chartWidth - leftMargin) / chartData.length;
 
-                    const maxValue = Math.max(
-                      ...chartData.flatMap(d => [d.pending, d.inProgress, d.resolved])
-                    ) || 100;
+                      const yScale = (val) => (chartHeight - bottomMargin) - (val / tickMax) * (chartHeight - bottomMargin);
 
-                    const chartWidth = 700;
-                    const chartHeight = 250;
-                    const stepX = chartWidth / (chartData.length - 1);
-                    const leftMargin = 50;
-                    const topMargin = 20;
-                    const bottomMargin = 30;
-
-                    const yScale = (val) => topMargin + (chartHeight - bottomMargin) - (val / maxValue) * (chartHeight - topMargin - bottomMargin);
-
-                    // Create paths for each line
-                    const createPath = (key) => {
-                      let path = "";
-                      chartData.forEach((d, i) => {
-                        const x = leftMargin + i * stepX;
-                        const y = yScale(d[key]);
-                        path += i === 0 ? `M${x},${y}` : ` L${x},${y}`;
-                      });
-                      return path;
-                    };
-
-                    return (
-                      <>
-                        {/* Grid lines */}
-                        <div className="absolute inset-0 left-12 right-8 top-4 bottom-8">
-                          {[0, 25, 50, 75, 100].map((val, i) => {
-                            const y = yScale(val * maxValue / 100);
-                            return (
-                              <div
-                                key={i}
-                                className="absolute left-0 right-0 border-t border-white/5"
-                                style={{ top: y }}
+                      return (
+                        <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none">
+                          {/* Grid Lines & Labels */}
+                          {yTicks.map((val, i) => (
+                            <g key={`tick-${i}`}>
+                              <line 
+                                x1={leftMargin} 
+                                y1={yScale(val)} 
+                                x2={chartWidth} 
+                                y2={yScale(val)} 
+                                stroke="#f3f4f6" 
+                                strokeWidth="1" 
+                                strokeDasharray="4 4" 
+                              />
+                              <text 
+                                x={leftMargin - 10} 
+                                y={yScale(val) + 4} 
+                                textAnchor="end" 
+                                className="text-xs fill-gray-400 font-medium"
                               >
-                                <span className="absolute -left-8 -top-2 text-xs text-white/30">
-                                  {val}%
-                                </span>
-                              </div>
+                                {Math.round(val)}
+                              </text>
+                            </g>
+                          ))}
+
+                          {/* Bars */}
+                          {chartData.map((d, i) => {
+                            const x = leftMargin + (i * stepX) + (stepX - barWidth) / 2;
+                            
+                            const pendingHeight = ((chartHeight - bottomMargin) * d.pending) / tickMax;
+                            const progressHeight = ((chartHeight - bottomMargin) * d.inProgress) / tickMax;
+                            const resolvedHeight = ((chartHeight - bottomMargin) * d.resolved) / tickMax;
+
+                            const pendingY = yScale(d.pending);
+                            const progressY = yScale(d.pending + d.inProgress);
+                            const resolvedY = yScale(d.pending + d.inProgress + d.resolved);
+
+                            return (
+                              <g key={`bar-${i}`}>
+                                {/* Pending (Red) */}
+                                {pendingHeight > 0 && (
+                                  <rect x={x} y={pendingY} width={barWidth} height={pendingHeight} fill="#ef4444" />
+                                )}
+                                {/* In Progress (Yellow) */}
+                                {progressHeight > 0 && (
+                                  <rect x={x} y={progressY} width={barWidth} height={progressHeight} fill="#f59e0b" />
+                                )}
+                                {/* Resolved (Green) with rounded top */}
+                                {resolvedHeight > 0 && (
+                                  <>
+                                    <rect x={x} y={resolvedY} width={barWidth} height={resolvedHeight} fill="#22c55e" rx={4} />
+                                    {/* Cover bottom rounded corners if it sits on top of others */}
+                                    {(pendingHeight > 0 || progressHeight > 0) && (
+                                      <rect x={x} y={resolvedY + 4} width={barWidth} height={Math.max(0, resolvedHeight - 4)} fill="#22c55e" />
+                                    )}
+                                  </>
+                                )}
+                                
+                                {/* X-Axis Label */}
+                                <text 
+                                  x={x + barWidth / 2} 
+                                  y={chartHeight - 5} 
+                                  textAnchor="middle" 
+                                  className="text-xs fill-gray-500 font-medium"
+                                >
+                                  {d.month}
+                                </text>
+                              </g>
                             );
                           })}
-                        </div>
-
-                        {/* SVG for lines */}
-                        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                          {/* Gradient definitions */}
-                          <defs>
-                            <linearGradient id="pendingGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
-                              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
-                            </linearGradient>
-                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#eab308" stopOpacity="0.2" />
-                              <stop offset="100%" stopColor="#eab308" stopOpacity="0.05" />
-                            </linearGradient>
-                            <linearGradient id="resolvedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.2" />
-                              <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
-                            </linearGradient>
-                          </defs>
-
-                          {/* Area under pending line */}
-                          <path
-                            d={`${createPath('pending')} L${leftMargin + (chartData.length - 1) * stepX},${chartHeight - bottomMargin} L${leftMargin},${chartHeight - bottomMargin} Z`}
-                            fill="url(#pendingGradient)"
-                            opacity="0.8"
-                          />
-
-                          {/* Area under inProgress line */}
-                          <path
-                            d={`${createPath('inProgress')} L${leftMargin + (chartData.length - 1) * stepX},${chartHeight - bottomMargin} L${leftMargin},${chartHeight - bottomMargin} Z`}
-                            fill="url(#progressGradient)"
-                            opacity="0.8"
-                          />
-
-                          {/* Area under resolved line */}
-                          <path
-                            d={`${createPath('resolved')} L${leftMargin + (chartData.length - 1) * stepX},${chartHeight - bottomMargin} L${leftMargin},${chartHeight - bottomMargin} Z`}
-                            fill="url(#resolvedGradient)"
-                            opacity="0.8"
-                          />
-
-                          {/* Pending line */}
-                          <path
-                            d={createPath('pending')}
-                            stroke="#ef4444"
-                            strokeWidth="3"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="drop-shadow-lg"
-                          />
-
-                          {/* In Progress line */}
-                          <path
-                            d={createPath('inProgress')}
-                            stroke="#eab308"
-                            strokeWidth="3"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="drop-shadow-lg"
-                          />
-
-                          {/* Resolved line */}
-                          <path
-                            d={createPath('resolved')}
-                            stroke="#22c55e"
-                            strokeWidth="3"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="drop-shadow-lg"
-                          />
-
-                          {/* Data points for all lines */}
-                          {['pending', 'inProgress', 'resolved'].map((key, lineIdx) => (
-                            chartData.map((d, i) => {
-                              const x = leftMargin + i * stepX;
-                              const y = yScale(d[key]);
-                              return (
-                                <g key={`${key}-${i}`}>
-                                  <circle
-                                    cx={x}
-                                    cy={y}
-                                    r="6"
-                                    fill={key === 'pending' ? '#ef4444' : key === 'inProgress' ? '#eab308' : '#22c55e'}
-                                    className="cursor-pointer"
-                                    onMouseEnter={() => setHoveredPoint({ 
-                                      month: d.month, 
-                                      type: key === 'pending' ? 'Pending' : key === 'inProgress' ? 'In Progress' : 'Resolved', 
-                                      value: d[key] 
-                                    })}
-                                    onMouseLeave={() => setHoveredPoint(null)}
-                                  />
-                                  <circle
-                                    cx={x}
-                                    cy={y}
-                                    r="10"
-                                    fill="white"
-                                    fillOpacity="0.1"
-                                    className="cursor-pointer"
-                                    onMouseEnter={() => setHoveredPoint({ 
-                                      month: d.month, 
-                                      type: key === 'pending' ? 'Pending' : key === 'inProgress' ? 'In Progress' : 'Resolved', 
-                                      value: d[key] 
-                                    })}
-                                    onMouseLeave={() => setHoveredPoint(null)}
-                                  />
-                                </g>
-                              );
-                            })
-                          ))}
                         </svg>
+                      );
+                    })()}
+                  </div>
+                </div>
 
-                        {/* X-axis labels */}
-                        <div className="absolute bottom-0 left-12 right-8 flex justify-between text-xs">
-                          {filteredData.monthlyData.map((month, i) => (
-                            <span key={month.month} className="text-white/40">
-                              {month.month}
-                            </span>
-                          ))}
-                        </div>
+                {/* Distribution Radial Chart */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col items-center">
+                  <div className="text-center mb-6">
+                    <h3 className="text-base font-semibold text-gray-900">Distribution</h3>
+                    <p className="text-sm text-gray-500 mt-1">Status breakdown</p>
+                  </div>
 
-                        {/* Tooltip */}
-                        {hoveredPoint && (
-                          <div
-                            className="absolute bg-[#1e293b] border border-white/10 rounded-lg px-3 py-2 shadow-xl z-10"
-                            style={{
-                              left: leftMargin + chartData.findIndex(d => d.month === hoveredPoint.month) * stepX - 30,
-                              top: yScale(chartData.find(d => d.month === hoveredPoint.month)?.[
-                                hoveredPoint.type === 'Pending' ? 'pending' : 
-                                hoveredPoint.type === 'In Progress' ? 'inProgress' : 'resolved'
-                              ] || 0) - 40
-                            }}
-                          >
-                            <p className="text-white text-xs font-bold">{hoveredPoint.month}</p>
-                            <p className="text-xs" style={{
-                              color: hoveredPoint.type === 'Pending' ? '#ef4444' : 
-                                     hoveredPoint.type === 'In Progress' ? '#eab308' : '#22c55e'
-                            }}>
-                              {hoveredPoint.type}: {hoveredPoint.value}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  <div className="relative w-48 h-48 mb-8 flex items-center justify-center">
+                    {(() => {
+                      const radiusRed = 80;
+                      const radiusYellow = 60;
+                      const radiusGreen = 40;
+                      
+                      const strokeWidth = 14;
+                      const center = 100;
+                      
+                      // Max percentage establishes the longest arc (full track)
+                      const maxPct = Math.max(summary.resolutionRate, summary.inProgressRate, summary.pendingRate);
+                      
+                      // Calculate Dash Arrays (Circumferences)
+                      const cRed = 2 * Math.PI * radiusRed;
+                      const cYellow = 2 * Math.PI * radiusYellow;
+                      const cGreen = 2 * Math.PI * radiusGreen;
+
+                      // 75% of circle is the track length, leaving a 25% gap at bottom
+                      const trackFraction = 0.75;
+                      
+                      // Calculate fill length relative to the max value
+                      const fillRed = (summary.pendingRate / maxPct) * (trackFraction * cRed);
+                      const fillYellow = (summary.inProgressRate / maxPct) * (trackFraction * cYellow);
+                      const fillGreen = (summary.resolutionRate / maxPct) * (trackFraction * cGreen);
+
+                      return (
+                        <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 200 200">
+                          {/* Background Tracks */}
+                          <circle cx={center} cy={center} r={radiusRed} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cRed} ${cRed}`} />
+                          <circle cx={center} cy={center} r={radiusYellow} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cYellow} ${cYellow}`} />
+                          <circle cx={center} cy={center} r={radiusGreen} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${trackFraction * cGreen} ${cGreen}`} />
+
+                          {/* Data Arcs */}
+                          {/* Red (Pending) - Outer */}
+                          <circle cx={center} cy={center} r={radiusRed} fill="none" stroke="#ef4444" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${fillRed} ${cRed}`} className="transition-all duration-1000 ease-out" />
+                          {/* Yellow (In Progress) - Middle */}
+                          <circle cx={center} cy={center} r={radiusYellow} fill="none" stroke="#f59e0b" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${fillYellow} ${cYellow}`} className="transition-all duration-1000 ease-out" />
+                          {/* Green (Resolved) - Inner */}
+                          <circle cx={center} cy={center} r={radiusGreen} fill="none" stroke="#22c55e" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${fillGreen} ${cGreen}`} className="transition-all duration-1000 ease-out" />
+                        </svg>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Legend/Stats */}
+                  <div className="w-full space-y-3 mt-auto">
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                        <span className="text-gray-600">Resolved</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">{summary.resolutionRate}%</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-amber-500 rounded-full"></div>
+                        <span className="text-gray-600">In Progress</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">{summary.inProgressRate}%</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span className="text-gray-600">Pending</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">{summary.pendingRate}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Resolution Rate Indicator */}
-              <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                <div className="flex items-center justify-between">
+              {/* Bottom Row: Resolution Rate */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                <div className="flex justify-between items-end mb-3">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-indigo-400" />
-                    <span className="text-sm text-white/60">Resolution Rate</span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      parseFloat(summary?.resolutionRate || 0) >= 70 ? 'bg-green-500/20 text-green-400' :
-                      parseFloat(summary?.resolutionRate || 0) >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-red-500/20 text-red-400'
-                    }`}>
-                      {summary?.resolutionRate}%
-                    </span>
+                    <TrendingUp className="h-5 w-5 text-indigo-600" />
+                    <span className="font-semibold text-gray-900">Resolution Rate</span>
                   </div>
-                  <div className="text-xs text-white/40">
-                    Avg resolution: {summary?.avgResolutionTime} days
+                  <span className="text-sm text-gray-500">Avg resolution: {summary.avgResolutionTime} days</span>
+                </div>
+                
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${summary.resolutionRate}%` }}
+                    ></div>
                   </div>
                 </div>
+                <div className="flex justify-end mt-2">
+                   <span className="text-sm font-bold text-indigo-600">{summary.resolutionRate}%</span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-white/5 rounded-xl border border-white/10">
-              <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-10 w-10 text-indigo-400/50" />
-              </div>
-              <p className="text-white/60 text-lg">Select a department or category to view analytics</p>
-              <p className="text-white/20 text-sm mt-2">Choose from the filters above to get started</p>
-            </div>
-          )}
+            </>
+          ) : null}
         </div>
       </div>
-
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes lineGrow {
-          from { 
-            stroke-dashoffset: 1000; 
-            opacity: 0.5;
-          }
-          to { 
-            stroke-dashoffset: 0; 
-            opacity: 1;
-          }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideInLeft {
-          from { 
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes bounceIn {
-          0% {
-            opacity: 0;
-            transform: scale(0.3);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.05);
-          }
-          70% {
-            transform: scale(0.9);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        
-        @keyframes pulse {
-          0% { r: 5; opacity: 0.8; }
-          50% { r: 8; opacity: 0.4; }
-          100% { r: 5; opacity: 0.8; }
-        }
-        
-        .dot:hover {
-          r: 8;
-          transition: r 0.2s ease;
-        }
-        
-        #data-tooltip {
-          z-index: 9999 !important;
-        }
-      `}</style>
     </div>,
     document.body
   );

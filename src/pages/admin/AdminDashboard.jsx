@@ -162,7 +162,7 @@ const AdminDashboard = () => {
     <div
       className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative"
       style={{
-        backgroundImage: `url('${import.meta.env.BASE_URL}images/local-bg.jpg')`,
+        backgroundImage: `url('${import.meta.env.BASE_URL}images/userloginbg8.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
@@ -278,7 +278,7 @@ const AdminDashboard = () => {
       <select
         value={selectedAnalyticsCategory}
         onChange={(e) => setSelectedAnalyticsCategory(e.target.value)}
-        className="w-full max-w-xs px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all hover:bg-white/10"
+        className="w-full max-w-xs px-4 py-3 border-white/20 rounded-xl text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all hover:bg-white/10"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' strokeOpacity='0.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
     </div>
 
     {/* Enhanced Progress Bars */}
-    <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+    <div className="p-5 ">
       {(() => {
         const data = getAnalyticsData();
         const maxValue = Math.max(data.pending, data.inProgress, data.resolved) || 1;
@@ -381,98 +381,6 @@ const AdminDashboard = () => {
         });
       })()}
     </div>
-
-    {/* Statistics Cards */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {(() => {
-        const data = getAnalyticsData();
-        const total = data.pending + data.inProgress + data.resolved;
-        
-        return [
-          { 
-            label: 'Pending', 
-            value: data.pending, 
-            color: 'red',
-            icon: '⏳',
-            percentage: total > 0 ? Math.round((data.pending / total) * 100) : 0,
-            bg: 'from-red-500/10 to-red-600/5',
-            border: 'border-red-500/20'
-          },
-          { 
-            label: 'In Progress', 
-            value: data.inProgress, 
-            color: 'yellow',
-            icon: '🔄',
-            percentage: total > 0 ? Math.round((data.inProgress / total) * 100) : 0,
-            bg: 'from-yellow-500/10 to-yellow-600/5',
-            border: 'border-yellow-500/20'
-          },
-          { 
-            label: 'Resolved', 
-            value: data.resolved, 
-            color: 'green',
-            icon: '✅',
-            percentage: total > 0 ? Math.round((data.resolved / total) * 100) : 0,
-            bg: 'from-green-500/10 to-green-600/5',
-            border: 'border-green-500/20'
-          }
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            className={`bg-gradient-to-br ${stat.bg} rounded-xl p-4 border ${stat.border}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 + index * 0.1 }}
-            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-white/50 text-xs mb-1">{stat.label}</p>
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
-              </div>
-              <span className="text-2xl">{stat.icon}</span>
-            </div>
-            <div className="mt-2 flex items-center gap-1">
-              <div className={`w-1 h-1 bg-${stat.color}-400 rounded-full`}></div>
-              <span className="text-xs text-white/40">{stat.percentage}% of total</span>
-            </div>
-          </motion.div>
-        ));
-      })()}
-    </div>
-
-    {/* Trend Indicator */}
-    {(() => {
-      const data = getAnalyticsData();
-      const total = data.pending + data.inProgress + data.resolved;
-      const resolvedPercentage = total > 0 ? (data.resolved / total) * 100 : 0;
-      
-      return (
-        <motion.div 
-          className="bg-white/5 rounded-lg p-3 border border-white/10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-white/60">Resolution Rate</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                resolvedPercentage >= 70 ? 'bg-green-500/20 text-green-400' :
-                resolvedPercentage >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-red-500/20 text-red-400'
-              }`}>
-                {resolvedPercentage.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-white/40">vs last month</span>
-              <span className="text-xs text-green-400">↑ 12%</span>
-            </div>
-          </div>
-        </motion.div>
-      );
-    })()}
   </div>
 
   {/* Add animation keyframes */}

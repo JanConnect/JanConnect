@@ -48,7 +48,7 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-5 cursor-pointer hover:shadow-lg transition-all duration-300 mb-4 max-w-4xl mx-auto min-h-32 flex flex-col justify-between hover:bg-white/15"
+      className="backdrop-blur-xl rounded-xl border border-white/20 p-5 cursor-pointer hover:shadow-lg transition-all duration-300 mb-4 max-w-4xl mx-auto min-h- flex flex-col justify-between hover:bg-white/15"
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
@@ -57,26 +57,17 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
             {statusIcons[complaint.status]}
           </div>
           
-          <div className="min-w-0 flex-1">
+          {/* <div className="min-w-0"> */}
             <h3 className="font-semibold text-white text-lg mb-1">
               {safeRender(complaint.title, 'Untitled Report')}
-            </h3>
-            <p className="text-white/70 text-sm line-clamp-2 mb-2">
-              {safeRender(complaint.description, 'No description available')}
-            </p>
-            
+            </h3>         
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-indigo-500/20 text-indigo-300 rounded-md border border-indigo-500/30">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-s font-medium text-indigo-300 ">
                 <FileText className="h-3 w-3" />
                 {safeRender(complaint.category, 'Unknown Category')}
               </span>
-              
-              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-white/10 text-white/80 rounded-md border border-white/20">
-                <MapPin className="h-3 w-3" />
-                {safeRender(complaint.area || complaint.municipality?.name, 'Unknown Location')}
-              </span>
             </div>
-          </div>
+          {/* </div> */}
         </div>
         
         <div className="flex flex-col items-end space-y-2 flex-shrink-0 ml-4">
@@ -106,11 +97,6 @@ const ComplaintCard = ({ complaint, onClick, index }) => {
           <div className="flex items-center">
             <ArrowBigUp className="h-4 w-4 mr-1" />
             <span>{getUpvoteCount(complaint)} upvotes</span>
-          </div>
-          
-          <div className="flex items-center">
-            <MessageSquare className="h-4 w-4 mr-1" />
-            <span>{getUpdatesCount(complaint)} updates</span>
           </div>
         </div>
         

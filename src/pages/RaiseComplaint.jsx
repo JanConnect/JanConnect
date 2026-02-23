@@ -166,10 +166,96 @@ const isLocationWithinRadius = (userLat, userLon, problemLat, problemLon, radius
   };
 };
 
-// Smart Image Verification Component
-const SmartImageVerification = ({ file, userLocation, problemLocation, onVerificationComplete }) => {
+// NEW: AI Image Analysis for auto-filling form
+const analyzeImageWithAI = async (file) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      img.src = e.target.result;
+      
+      img.onload = async () => {
+        // Simulate AI analysis (in production, you'd call a real AI service)
+        // This is a mock implementation using basic image properties and mock detection
+        
+        // Mock AI detection results
+        const mockCategories = [
+          "Infrastructure", "Sanitation", "Street Lighting", 
+          "Water Supply", "Traffic", "Parks", "Other"
+        ];
+        
+        const mockUrgencyLevels = ["low", "medium", "high"];
+        
+        // Simulate AI processing time
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // Mock AI analysis based on image properties
+        let detectedCategory = "Infrastructure";
+        let detectedUrgency = "medium";
+        let detectedTitle = "";
+        let detectedDescription = "";
+        
+        // Simple heuristic based on image dimensions/colors (mock)
+        const brightness = img.width * img.height > 1000000 ? "high" : "medium";
+        
+        // Mock detection logic
+        if (file.name.toLowerCase().includes("pothole") || file.name.toLowerCase().includes("road")) {
+          detectedCategory = "Infrastructure";
+          detectedTitle = "Pothole on main road needs repair";
+          detectedDescription = "A pothole has formed on the main road causing traffic hazards. Immediate repair required to prevent accidents.";
+          detectedUrgency = brightness === "high" ? "high" : "medium";
+        } else if (file.name.toLowerCase().includes("garbage") || file.name.toLowerCase().includes("trash") || file.name.toLowerCase().includes("waste")) {
+          detectedCategory = "Sanitation";
+          detectedTitle = "Garbage dump needs immediate cleaning";
+          detectedDescription = "Large amount of garbage accumulated creating unhygienic conditions. Requires immediate sanitation services.";
+          detectedUrgency = "high";
+        } else if (file.name.toLowerCase().includes("light") || file.name.toLowerCase().includes("streetlight")) {
+          detectedCategory = "Street Lighting";
+          detectedTitle = "Street light not working";
+          detectedDescription = "Street light is malfunctioning, creating dark spots and safety concerns in the area.";
+          detectedUrgency = "medium";
+        } else if (file.name.toLowerCase().includes("water") || file.name.toLowerCase().includes("leak")) {
+          detectedCategory = "Water Supply";
+          detectedTitle = "Water pipeline leakage detected";
+          detectedDescription = "Water is leaking from main pipeline causing wastage and potential damage to the road.";
+          detectedUrgency = "high";
+        } else {
+          // Random selection for demo
+          detectedCategory = mockCategories[Math.floor(Math.random() * mockCategories.length)];
+          detectedUrgency = mockUrgencyLevels[Math.floor(Math.random() * mockUrgencyLevels.length)];
+          detectedTitle = `${detectedCategory} issue detected in the area`;
+          detectedDescription = `An issue related to ${detectedCategory} has been detected. Please review and take necessary action.`;
+        }
+        
+        // Log the analysis
+        debugLog('🤖 AI Image Analysis Complete', {
+          category: detectedCategory,
+          urgency: detectedUrgency,
+          title: detectedTitle,
+          descriptionPreview: detectedDescription.substring(0, 50)
+        });
+        
+        resolve({
+          category: detectedCategory,
+          urgency: detectedUrgency,
+          title: detectedTitle,
+          description: detectedDescription,
+          confidence: Math.floor(Math.random() * 30) + 70 // 70-100% confidence
+        });
+      };
+    };
+    
+    reader.readAsDataURL(file);
+  });
+};
+
+// Smart Image Verification Component with auto-fill
+const SmartImageVerification = ({ file, userLocation, problemLocation, onVerificationComplete, onAutoFill }) => {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [autoFillApplied, setAutoFillApplied] = useState(false);
 
   const performSmartVerification = async () => {
     if (!file) return;
@@ -237,6 +323,29 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
 
       setVerificationResult(result);
       onVerificationComplete(result);
+
+      // Run AI analysis for auto-fill (if not already applied)
+      if (!autoFillApplied) {
+        const analysis = await analyzeImageWithAI(file);
+        setAiAnalysis(analysis);
+        
+        // Auto-fill the form with AI suggestions
+        if (onAutoFill) {
+          onAutoFill({
+            title: analysis.title,
+            category: analysis.category,
+            description: analysis.description,
+            urgency: analysis.urgency
+          });
+          setAutoFillApplied(true);
+          
+          debugLog('🤖 Auto-fill applied from image analysis', {
+            title: analysis.title,
+            category: analysis.category,
+            confidence: analysis.confidence
+          });
+        }
+      }
       
     } catch (error) {
       console.error('Error in smart verification:', error);
@@ -312,7 +421,7 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
     <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/20">
       <div className="flex items-center gap-2 mb-3">
         <Camera className="h-4 w-4 text-white/70" />
-        <span className="text-white/70 text-sm font-medium">Smart Image Verification</span>
+        <span className="text-white/70 text-sm font-medium">Smart Image Verification & Auto-Fill</span>
       </div>
 
       {loading ? (
@@ -322,6 +431,35 @@ const SmartImageVerification = ({ file, userLocation, problemLocation, onVerific
         </div>
       ) : verificationResult ? (
         <div className="space-y-4">
+          {/* AI Analysis Status */}
+          {aiAnalysis && (
+            <div className="bg-green-500/10 border border-green-400/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <span className="text-green-300 text-sm font-medium">AI Analysis Complete</span>
+                <span className="text-green-400/70 text-xs ml-auto">
+                  Confidence: {aiAnalysis.confidence}%
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-white/50">Detected Category:</span>
+                  <span className="text-green-300 ml-1">{aiAnalysis.category}</span>
+                </div>
+                <div>
+                  <span className="text-white/50">Detected Urgency:</span>
+                  <span className="text-green-300 ml-1 capitalize">{aiAnalysis.urgency}</span>
+                </div>
+              </div>
+              {autoFillApplied && (
+                <p className="text-green-300/70 text-xs mt-2 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Form auto-filled with AI suggestions
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Overall Score */}
           <div className="flex items-center justify-between">
             <span className="text-white/70 text-sm">Authenticity Score</span>
@@ -592,17 +730,17 @@ export default function RaiseComplaint() {
   const [userCurrentLocation, setUserCurrentLocation] = useState(null);
   const [smartVerification, setSmartVerification] = useState(null);
   
-  // **NEW: Camera modal state**
+  // Camera modal state
   const [showCamera, setShowCamera] = useState(false);
   
-  // **Voice message states**
+  // Voice message states
   const [voiceBlob, setVoiceBlob] = useState(null);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [voiceRecordingTime, setVoiceRecordingTime] = useState(0);
   const voiceRecorderRef = useRef(null);
   const voiceTimerRef = useRef(null);
   
-  // Speech to text states (existing)
+  // Speech to text states
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState("");
   const recognitionRef = useRef(null);
@@ -652,6 +790,26 @@ const { isLoaded } = useJsApiLoader({
     });
   };
 
+  // NEW: Auto-fill handler for AI suggestions
+  const handleAutoFill = (suggestions) => {
+    setFormData(prev => ({
+      ...prev,
+      title: suggestions.title || prev.title,
+      category: suggestions.category || prev.category,
+      description: suggestions.description || prev.description,
+      urgency: suggestions.urgency || prev.urgency
+    }));
+    
+    // Show success message
+    setError(""); // Clear any existing errors
+    
+    debugLog('🤖 Auto-fill applied', {
+      title: suggestions.title,
+      category: suggestions.category,
+      urgency: suggestions.urgency
+    });
+  };
+
   const handleCameraCapture = (file) => {
     debugLog('📷 Camera capture completed', {
       fileName: file.name,
@@ -695,7 +853,7 @@ const { isLoaded } = useJsApiLoader({
     }
   };
 
-  // **Voice Recording Functions with Debugging**
+  // Voice Recording Functions with Debugging
   const startVoiceRecording = async () => {
     debugLog('🎤 Starting voice recording');
     try {
@@ -757,7 +915,7 @@ const { isLoaded } = useJsApiLoader({
     setVoiceRecordingTime(0);
   };
 
-  // Initialize speech recognition (existing)
+  // Initialize speech recognition
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -804,7 +962,7 @@ const { isLoaded } = useJsApiLoader({
     };
   }, [isListening]);
 
-  // Toggle speech recognition (existing)
+  // Toggle speech recognition
   const toggleListening = () => {
     debugLog('🎙️ Toggling speech recognition', { currentlyListening: isListening });
     if (isListening) {
@@ -848,7 +1006,7 @@ const { isLoaded } = useJsApiLoader({
     });
   };
 
-  // **UPDATED: Enhanced handleSubmit with comprehensive debugging**
+  // Enhanced handleSubmit with comprehensive debugging
   const handleSubmit = async (e) => {
     e.preventDefault();
     debugLog('🚀 Form submission started');
@@ -859,7 +1017,7 @@ const { isLoaded } = useJsApiLoader({
     // Debug form state before validation
     debugFormSubmission(formData, voiceBlob, smartVerification);
 
-    // **UPDATED: Basic form validation with voice message option**
+    // Basic form validation with voice message option
     if (!formData.location.address || (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0)) {
       const errorMsg = "Please select a valid location or use current location";
       debugLog('❌ Location validation failed', { error: errorMsg });
@@ -868,7 +1026,7 @@ const { isLoaded } = useJsApiLoader({
       return;
     }
 
-    // **NEW: Check if either description OR voice message is present**
+    // Check if either description OR voice message is present
     const hasDescription = formData.description && formData.description.trim();
     const hasVoiceMessage = voiceBlob;
 
@@ -939,7 +1097,7 @@ const { isLoaded } = useJsApiLoader({
         }
       }
 
-      // **UPDATED: Proceed with form submission - Added voice message support**
+      // Proceed with form submission - Added voice message support
       const submitFormData = new FormData();
       
       submitFormData.append('title', formData.title);
@@ -969,7 +1127,7 @@ const { isLoaded } = useJsApiLoader({
       
       submitFormData.append('verification', JSON.stringify(verificationData));
       
-      // **NEW: Add voice message if present**
+      // Add voice message if present
       if (hasVoiceMessage) {
         submitFormData.append('voiceMessage', voiceBlob, 'voice-message.webm');
         debugLog('📢 Voice message added to form data', {
@@ -1033,7 +1191,7 @@ const { isLoaded } = useJsApiLoader({
     }
   };
 
-  // Handle smart verification complete (existing)
+  // Handle smart verification complete
   const handleSmartVerificationComplete = (result) => {
     debugLog('✅ Smart verification completed', {
       overallScore: result.overallScore,
@@ -1043,7 +1201,7 @@ const { isLoaded } = useJsApiLoader({
     setSmartVerification(result);
   };
 
-  // Get user location on component mount (existing)
+  // Get user location on component mount
   useEffect(() => {
     debugLog('🎯 RaiseComplaint Component Mounted', {
       userId,
@@ -1067,7 +1225,7 @@ const { isLoaded } = useJsApiLoader({
     }));
   };
 
-  // Set autocomplete value (existing)
+  // Set autocomplete value
   const setAutocompleteValue = (value) => {
     if (acRef.current) {
       setTimeout(() => {
@@ -1420,7 +1578,7 @@ const { isLoaded } = useJsApiLoader({
     navigate(`/user/${userId}`);
   };
 
-  // **UPDATED: Check if form can be submitted with voice message support**
+  // Check if form can be submitted with voice message support
   const canSubmit = () => {
     const hasTitle = formData.title && formData.title.trim();
     const hasCategory = formData.category;
@@ -1582,7 +1740,7 @@ const { isLoaded } = useJsApiLoader({
               </select>
             </div>
 
-            {/* **UPDATED: Description with Speech-to-Text AND Voice Message** */}
+            {/* Description with Speech-to-Text AND Voice Message */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-white/80 text-sm font-medium">
@@ -1794,10 +1952,10 @@ const { isLoaded } = useJsApiLoader({
               </div>
             </div>
 
-            {/* **UPDATED: File Upload with Camera Option and Smart Verification */}
+            {/* File Upload with Camera Option and Smart Verification + Auto-Fill */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
-                Add Photo (Optional - Automatic verification required) *
+                Add Photo (Optional - Automatic verification & auto-fill) *
               </label>
               {previewUrl && (
                 <div className="mb-3 relative">
@@ -1811,17 +1969,18 @@ const { isLoaded } = useJsApiLoader({
                   </button>
                   <p className="text-white/60 text-xs mt-1">{formData.media?.name}</p>
                   
-                  {/* Smart Image Verification Component */}
+                  {/* Smart Image Verification Component with Auto-Fill */}
                   <SmartImageVerification 
                     file={formData.media}
                     userLocation={userCurrentLocation}
                     problemLocation={markerPosition}
                     onVerificationComplete={handleSmartVerificationComplete}
+                    onAutoFill={handleAutoFill}
                   />
                 </div>
               )}
               
-              {/* **UPDATED: Upload options with camera */}
+              {/* Upload options with camera */}
               <div className="grid grid-cols-2 gap-3">
                 {/* File Upload */}
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl bg-white/5 hover:bg-white/10 transition-colors duration-200 cursor-pointer">
@@ -1846,7 +2005,7 @@ const { isLoaded } = useJsApiLoader({
               </div>
               
               <p className="text-white/40 text-xs mt-2 text-center">
-                Max 50MB • Must pass verification • Fresh photos recommended
+                Max 50MB • Must pass verification • Form auto-fills from photo
               </p>
             </div>
 

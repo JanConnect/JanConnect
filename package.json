@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
+    "@google/generative-ai": "^0.24.1",
     "@googlemaps/react-wrapper": "^1.2.0",
     "@headlessui/react": "^2.2.7",
     "@react-google-maps/api": "^2.20.7",

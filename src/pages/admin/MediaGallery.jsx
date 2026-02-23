@@ -23,26 +23,12 @@ const MediaGallery = ({ image, voiceMessage }) => {
     );
   }
 
-  return (
-    <motion.div
-      className="p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-    >
-      <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-        <Camera className="h-5 w-5 text-indigo-400" />
-        Media Attachments
-      </h2>
-      
+  return (     
       <div className="space-y-6">
         {/* Image Section */}
         {hasImage && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-white/70 flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Uploaded Image
-            </h3>
+            
             <div className="relative group overflow-hidden rounded-xl bg-black/20">
               <img
                 src={image.url}
@@ -101,7 +87,6 @@ const MediaGallery = ({ image, voiceMessage }) => {
           </div>
         )}
       </div>
-    </motion.div>
   );
 };
 

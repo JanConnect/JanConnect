@@ -1489,7 +1489,7 @@ const { isLoaded } = useJsApiLoader({
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userpagebg.jpg')` }}
+          style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/userloginbg6.jpg')` }}
         />
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       </div>

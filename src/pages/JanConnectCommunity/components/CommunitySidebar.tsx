@@ -9,6 +9,10 @@ import {
   ShieldAlert 
 } from "lucide-react";
 
+interface CommunitySidebarProps {
+  onCreatePost?: () => void;
+}
+
 const trendingProblems = [
   { topic: "WaterCrisis", posts: "234 posts", Icon: Droplets },
   { topic: "RoadRepair", posts: "189 posts", Icon: Wrench },
@@ -17,7 +21,7 @@ const trendingProblems = [
   { topic: "PublicSafety", posts: "87 posts", Icon: ShieldAlert },
 ];
 
-const CommunitySidebar: React.FC = () => {
+const CommunitySidebar: React.FC<CommunitySidebarProps> = ({ onCreatePost }) => {
   return (
     <aside className="space-y-6 font-sans">
       
@@ -53,7 +57,10 @@ const CommunitySidebar: React.FC = () => {
         
         {/* Removed "Created 2 years ago" section */}
         
-        <button className="w-full py-2.5 rounded-full bg-[#f48024] text-white font-semibold text-[14px] hover:bg-[#e0701c] transition-colors shadow-sm">
+        <button 
+          onClick={onCreatePost}
+          className="w-full py-2.5 rounded-full bg-[#f48024] text-white font-semibold text-[14px] hover:bg-[#e0701c] transition-colors shadow-sm"
+        >
           Create Post
         </button>
       </div>

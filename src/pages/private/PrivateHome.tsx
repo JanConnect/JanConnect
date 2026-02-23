@@ -312,8 +312,8 @@ const PrivateHome = () => {
           </div>
         </div>
 
-        {/* Gradient Blur overlay effect at the bottom blending into gray-50 */}
-        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent backdrop-blur-[2px]" />
+        {/* Subtle gradient overlay effect at the bottom blending into gray-50 - REDUCED INTENSITY */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-gray-50 via-gray-50/30 to-transparent" />
       </div>
 
       <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 mt-16 z-20">
